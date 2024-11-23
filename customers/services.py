@@ -29,7 +29,7 @@ class CustomerService:
     def get_customer_by_username(username):
         """Fetches a customer record from the database by username."""
         query = text("SELECT * FROM customers WHERE username = :username")
-        result = db.session.execute(query, {"username": username}).fetchone()
+        result = db.session.execute(query, {"username": username}).mappings().fetchone()
 
         if not result:
             return None
