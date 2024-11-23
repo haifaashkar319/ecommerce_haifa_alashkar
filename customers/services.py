@@ -44,3 +44,35 @@ class CustomerService:
             marital_status=result["marital_status"],
             wallet_balance=result["wallet_balance"],
         )
+    
+    @staticmethod
+    def update_customer(username, updates):
+        """Updates a customer's information."""
+        query = text("""
+            UPDATE customers
+            SET full_name = COALESCE(:full_name, full_name),
+                password = COALESCE(:password, password),
+                age = COALESCE(:age, age),
+                address = COALESCE(:address, address),
+                gender = COALESCE(:gender, gender),
+                marital_status = COALESCE(:marital_status, marital_status),
+                wallet_balance = COALESCE(:wallet_balance, wallet_balance)
+            WHERE username = :username
+        """)
+        result = db.session.execute(
+            query, {**updates, "username": username}
+        )
+        db.session.commit()
+        return result.rowcount > 0
+    
+    @staticmethod
+    def delete_customer(username):
+        """Deletes a customer from the database."""
+        query = text("DELETE FROM customers WHERE username = :username")
+        result = db.session.execute(query, {"username": username})
+        db.session.commit()
+        return result.rowcount > 0
+
+
+
+    

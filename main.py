@@ -21,12 +21,28 @@ def create_customer():
     CustomerService.save_to_db(customer)
     return jsonify({"message": "Customer created successfully"}), 201
 
+@app.route('/customer/<username>', methods=['PUT'])
+def update_customer(username):
+    data = request.json
+    success = CustomerService.update_customer(username, data)
+    if not success:
+        return jsonify({"error": "Customer not found"}), 404
+    return jsonify({"message": "Customer updated successfully"})
+
+@app.route('/customer/<username>', methods=['DELETE'])
+def delete_customer(username):
+    success = CustomerService.delete_customer(username)
+    if not success:
+        return jsonify({"error": "Customer not found"}), 404
+    return jsonify({"message": "Customer deleted successfully"})
+
 @app.route('/customer/<username>', methods=['GET'])
 def get_customer(username):
     customer = CustomerService.get_customer_by_username(username)
     if not customer:
         return jsonify({"error": "Customer not found"}), 404
     return jsonify(customer.to_dict())
+
 
 if __name__ == "__main__":
     app.run(debug=True)
