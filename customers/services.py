@@ -73,6 +73,43 @@ class CustomerService:
         db.session.commit()
         return result.rowcount > 0
 
+    @staticmethod
+    def get_all_customers():
+        """Fetches all customers from the database."""
+        query = text("SELECT * FROM customers")
+        results = db.session.execute(query).mappings().fetchall()
 
+        return [Customer(
+            full_name=result["full_name"],
+            username=result["username"],
+            password=result["password"],
+            age=result["age"],
+            address=result["address"],
+            gender=result["gender"],
+            marital_status=result["marital_status"],
+            wallet_balance=result["wallet_balance"]
+        ).to_dict() for result in results]
+        
+    @staticmethod
+    def charge_wallet(username, amount):
+        """Charges a customer's wallet."""
+        query = text("""
+            UPDATE customers
+            SET wallet_balance = wallet_balance + :amount
+            WHERE username = :username
+        """)
+        result = db.session.execute(query, {"amount": amount, "username": username})
+        db.session.commit()
+        return result.rowcount > 0
 
-    
+    @staticmethod
+    def deduct_wallet(username, amount):
+        """Deducts funds from a customer's wallet if sufficient balance exists."""
+        query = text("""
+            UPDATE customers
+            SET wallet_balance = wallet_balance - :amount
+            WHERE username = :username AND wallet_balance >= :amount
+        """)
+        result = db.session.execute(query, {"amount": amount, "username": username})
+        db.session.commit()
+        return result.rowcount > 0

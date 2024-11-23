@@ -43,6 +43,26 @@ def get_customer(username):
         return jsonify({"error": "Customer not found"}), 404
     return jsonify(customer.to_dict())
 
+@app.route('/customers', methods=['GET'])
+def get_all_customers():
+    customers = CustomerService.get_all_customers()
+    return jsonify(customers)
+
+@app.route('/customer/<username>/wallet/charge', methods=['POST'])
+def charge_wallet(username):
+    data = request.json
+    success = CustomerService.charge_wallet(username, data['amount'])
+    if not success:
+        return jsonify({"error": "Customer not found"}), 404
+    return jsonify({"message": "Wallet charged successfully"})
+
+@app.route('/customer/<username>/wallet/deduct', methods=['POST'])
+def deduct_wallet(username):
+    data = request.json
+    success = CustomerService.deduct_wallet(username, data['amount'])
+    if not success:
+        return jsonify({"error": "Customer not found or insufficient funds"}), 400
+    return jsonify({"message": "Wallet deducted successfully"})
 
 if __name__ == "__main__":
     app.run(debug=True)
