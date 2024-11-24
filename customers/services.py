@@ -5,7 +5,15 @@ from customers.models import Customer
 class CustomerService:
     @staticmethod
     def save_to_db(customer):
-        """Saves a customer object to the database."""
+        """
+        Saves a customer object to the database.
+
+        Args:
+            customer (Customer): The customer object to save.
+
+        Returns:
+            None
+        """
         query = text("""
             INSERT INTO customers (full_name, username, password, age, address, gender, marital_status, wallet_balance)
             VALUES (:full_name, :username, :password, :age, :address, :gender, :marital_status, :wallet_balance)
@@ -27,7 +35,15 @@ class CustomerService:
 
     @staticmethod
     def get_customer_by_username(username):
-        """Fetches a customer record from the database by username."""
+        """
+        Fetches a customer record from the database by username.
+
+        Args:
+            username (str): The username of the customer.
+
+        Returns:
+            Customer or None: The customer object if found, otherwise None.
+        """
         query = text("SELECT * FROM customers WHERE username = :username")
         result = db.session.execute(query, {"username": username}).mappings().fetchone()
 
@@ -47,7 +63,16 @@ class CustomerService:
     
     @staticmethod
     def update_customer(username, updates):
-        """Updates a customer's information."""
+        """
+        Updates a customer's information.
+
+        Args:
+            username (str): The username of the customer.
+            updates (dict): A dictionary of fields to update.
+
+        Returns:
+            bool: True if the update was successful, False otherwise.
+        """
         query = text("""
             UPDATE customers
             SET full_name = COALESCE(:full_name, full_name),
@@ -67,7 +92,15 @@ class CustomerService:
     
     @staticmethod
     def delete_customer(username):
-        """Deletes a customer from the database."""
+        """
+        Deletes a customer from the database.
+
+        Args:
+            username (str): The username of the customer.
+
+        Returns:
+            bool: True if the deletion was successful, False otherwise.
+        """
         query = text("DELETE FROM customers WHERE username = :username")
         result = db.session.execute(query, {"username": username})
         db.session.commit()
@@ -75,7 +108,12 @@ class CustomerService:
 
     @staticmethod
     def get_all_customers():
-        """Fetches all customers from the database."""
+        """
+        Fetches all customers from the database.
+
+        Returns:
+            list: A list of customer dictionaries.
+        """
         query = text("SELECT * FROM customers")
         results = db.session.execute(query).mappings().fetchall()
 
@@ -92,7 +130,16 @@ class CustomerService:
         
     @staticmethod
     def charge_wallet(username, amount):
-        """Charges a customer's wallet."""
+        """
+        Charges a specified amount to a customer's wallet.
+
+        Args:
+            username (str): The username of the customer.
+            amount (float): The amount to charge.
+
+        Returns:
+            bool: True if the operation was successful, False otherwise.
+        """
         query = text("""
             UPDATE customers
             SET wallet_balance = wallet_balance + :amount
@@ -104,7 +151,16 @@ class CustomerService:
 
     @staticmethod
     def deduct_wallet(username, amount):
-        """Deducts funds from a customer's wallet if sufficient balance exists."""
+        """
+        Deducts funds from a customer's wallet if sufficient balance exists.
+
+        Args:
+            username (str): The username of the customer.
+            amount (float): The amount to deduct.
+
+        Returns:
+            bool: True if the operation was successful, False otherwise.
+        """
         query = text("""
             UPDATE customers
             SET wallet_balance = wallet_balance - :amount
