@@ -14,6 +14,7 @@
     <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="main module" href="main.html" />
    
   <link rel="stylesheet" href="_static/custom.css" type="text/css" />
   
@@ -175,6 +176,167 @@
 </section>
 <section id="module-customers.routes">
 <span id="customers-routes-module"></span><h2>customers.routes module<a class="headerlink" href="#module-customers.routes" title="Link to this heading">¶</a></h2>
+<section id="customer-routes">
+<h3>Customer Routes<a class="headerlink" href="#customer-routes" title="Link to this heading">¶</a></h3>
+<p>This module defines the Flask routes for managing customer-related operations.</p>
+<section id="blueprint">
+<h4>Blueprint:<a class="headerlink" href="#blueprint" title="Link to this heading">¶</a></h4>
+<ul class="simple">
+<li><p>customers_blueprint: Blueprint for customer-related APIs.</p></li>
+</ul>
+</section>
+<section id="routes">
+<h4>Routes:<a class="headerlink" href="#routes" title="Link to this heading">¶</a></h4>
+<ul class="simple">
+<li><p>POST <cite>/customer</cite>: Create a new customer.</p></li>
+<li><p>PUT <cite>/customer/&lt;username&gt;</cite>: Update an existing customer’s information.</p></li>
+<li><p>DELETE <cite>/customer/&lt;username&gt;</cite>: Delete a customer.</p></li>
+<li><p>GET <cite>/customer/&lt;username&gt;</cite>: Fetch a customer’s details.</p></li>
+<li><p>GET <cite>/customers</cite>: Fetch all customers.</p></li>
+<li><p>POST <cite>/customer/&lt;username&gt;/wallet/charge</cite>: Charge an amount to a customer’s wallet.</p></li>
+<li><p>POST <cite>/customer/&lt;username&gt;/wallet/deduct</cite>: Deduct an amount from a customer’s wallet.</p></li>
+</ul>
+</section>
+</section>
+<dl class="py function">
+<dt class="sig sig-object py" id="customers.routes.charge_wallet">
+<span class="sig-prename descclassname"><span class="pre">customers.routes.</span></span><span class="sig-name descname"><span class="pre">charge_wallet</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">username</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/customers/routes.html#charge_wallet"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#customers.routes.charge_wallet" title="Link to this definition">¶</a></dt>
+<dd><p>Charges an amount to a customer’s wallet.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>username</strong> (<em>str</em>) – The username of the customer to charge.</p>
+</dd>
+</dl>
+<p>Expects a JSON payload with:
+- amount (float): The amount to charge.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>A success message or error if the customer is not found.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>Response (JSON)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="customers.routes.create_customer">
+<span class="sig-prename descclassname"><span class="pre">customers.routes.</span></span><span class="sig-name descname"><span class="pre">create_customer</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/customers/routes.html#create_customer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#customers.routes.create_customer" title="Link to this definition">¶</a></dt>
+<dd><p>Registers a new customer.</p>
+<p>Expects a JSON payload with:
+- full_name (str): The full name of the customer.
+- username (str): Unique username for the customer.
+- password (str): Password for the customer.
+- age (int): Age of the customer.
+- address (str, optional): Address of the customer.
+- gender (str, optional): Gender of the customer.
+- marital_status (str, optional): Marital status of the customer.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>A success message with a 201 status code.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>Response (JSON)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="customers.routes.deduct_wallet">
+<span class="sig-prename descclassname"><span class="pre">customers.routes.</span></span><span class="sig-name descname"><span class="pre">deduct_wallet</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">username</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/customers/routes.html#deduct_wallet"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#customers.routes.deduct_wallet" title="Link to this definition">¶</a></dt>
+<dd><p>Deducts an amount from a customer’s wallet.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>username</strong> (<em>str</em>) – The username of the customer.</p>
+</dd>
+</dl>
+<p>Expects a JSON payload with:
+- amount (float): The amount to deduct.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>A success message or error if the customer is not found or has insufficient funds.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>Response (JSON)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="customers.routes.delete_customer">
+<span class="sig-prename descclassname"><span class="pre">customers.routes.</span></span><span class="sig-name descname"><span class="pre">delete_customer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">username</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/customers/routes.html#delete_customer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#customers.routes.delete_customer" title="Link to this definition">¶</a></dt>
+<dd><p>Deletes a customer by username.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>username</strong> (<em>str</em>) – The username of the customer to delete.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A success message or error if the customer is not found.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Response (JSON)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="customers.routes.get_all_customers">
+<span class="sig-prename descclassname"><span class="pre">customers.routes.</span></span><span class="sig-name descname"><span class="pre">get_all_customers</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/customers/routes.html#get_all_customers"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#customers.routes.get_all_customers" title="Link to this definition">¶</a></dt>
+<dd><p>Fetches all customers in the database.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>A list of all customer records.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>Response (JSON)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="customers.routes.get_customer">
+<span class="sig-prename descclassname"><span class="pre">customers.routes.</span></span><span class="sig-name descname"><span class="pre">get_customer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">username</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/customers/routes.html#get_customer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#customers.routes.get_customer" title="Link to this definition">¶</a></dt>
+<dd><p>Fetches customer details by username.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>username</strong> (<em>str</em>) – The username of the customer.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The customer’s details or an error if not found.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Response (JSON)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="customers.routes.update_customer">
+<span class="sig-prename descclassname"><span class="pre">customers.routes.</span></span><span class="sig-name descname"><span class="pre">update_customer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">username</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/customers/routes.html#update_customer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#customers.routes.update_customer" title="Link to this definition">¶</a></dt>
+<dd><p>Updates a customer’s information.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>username</strong> (<em>str</em>) – The username of the customer to update.</p>
+</dd>
+</dl>
+<p>Expects a JSON payload with any of the following fields:
+- full_name (str, optional)
+- password (str, optional)
+- age (int, optional)
+- address (str, optional)
+- gender (str, optional)
+- marital_status (str, optional)
+- wallet_balance (float, optional)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>A success message or error if the customer is not found.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>Response (JSON)</p>
+</dd>
+</dl>
+</dd></dl>
+
 </section>
 <section id="module-customers.services">
 <span id="customers-services-module"></span><h2>customers.services module<a class="headerlink" href="#module-customers.services" title="Link to this heading">¶</a></h2>
@@ -339,14 +501,23 @@
 </search>
 <script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
 <p class="caption" role="heading"><span class="caption-text">Modules:</span></p>
-<ul>
+<ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="main.html">main module</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">customers package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-customers.models">customers.models module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-customers.routes">customers.routes module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-customers.services">customers.services module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-customers">Module contents</a></li>
+</ul>
+</li>
 </ul>
 
 <div class="relations">
 <h3>Related Topics</h3>
 <ul>
   <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="main.html" title="previous chapter">main module</a></li>
   </ul></li>
 </ul>
 </div>

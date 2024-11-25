@@ -10,3 +10,4 @@ Modules
 
    main
    customers
+   inventory

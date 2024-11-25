@@ -39,8 +39,11 @@
  | <a href="#D"><strong>D</strong></a>
  | <a href="#F"><strong>F</strong></a>
  | <a href="#G"><strong>G</strong></a>
+ | <a href="#I"><strong>I</strong></a>
  | <a href="#M"><strong>M</strong></a>
+ | <a href="#N"><strong>N</strong></a>
  | <a href="#P"><strong>P</strong></a>
+ | <a href="#Q"><strong>Q</strong></a>
  | <a href="#S"><strong>S</strong></a>
  | <a href="#T"><strong>T</strong></a>
  | <a href="#U"><strong>U</strong></a>
@@ -50,10 +53,18 @@
 <h2 id="A">A</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="customers.html#customers.models.Customer.address">address (customers.models.Customer attribute)</a>
+      <li><a href="inventory.html#inventory.routes.add_goods">add_goods() (in module inventory.routes)</a>
+
+      <ul>
+        <li><a href="inventory.html#inventory.services.InventoryService.add_goods">(inventory.services.InventoryService static method)</a>
 </li>
+      </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="inventory.html#inventory.models.Goods.add_stock">add_stock() (inventory.models.Goods method)</a>
+</li>
+      <li><a href="customers.html#customers.models.Customer.address">address (customers.models.Customer attribute)</a>
+</li>
       <li><a href="customers.html#customers.models.Customer.age">age (customers.models.Customer attribute)</a>
 </li>
   </ul></td>
@@ -62,15 +73,19 @@
 <h2 id="C">C</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="inventory.html#id0">category (inventory.models.Goods attribute)</a>, <a href="inventory.html#inventory.models.Goods.category">[1]</a>
+</li>
       <li><a href="customers.html#customers.models.Customer.charge_wallet">charge_wallet() (customers.models.Customer method)</a>
 
       <ul>
         <li><a href="customers.html#customers.services.CustomerService.charge_wallet">(customers.services.CustomerService static method)</a>
 </li>
-        <li><a href="main.html#main.charge_wallet">(in module main)</a>
+        <li><a href="customers.html#customers.routes.charge_wallet">(in module customers.routes)</a>
 </li>
       </ul></li>
-      <li><a href="main.html#main.create_customer">create_customer() (in module main)</a>
+      <li><a href="inventory.html#id1">count_in_stock (inventory.models.Goods attribute)</a>, <a href="inventory.html#inventory.models.Goods.count_in_stock">[1]</a>
+</li>
+      <li><a href="customers.html#customers.routes.create_customer">create_customer() (in module customers.routes)</a>
 </li>
       <li><a href="customers.html#customers.models.Customer">Customer (class in customers.models)</a>
 </li>
@@ -112,12 +127,20 @@
 <h2 id="D">D</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="inventory.html#inventory.routes.deduct_goods">deduct_goods() (in module inventory.routes)</a>
+
+      <ul>
+        <li><a href="inventory.html#inventory.services.InventoryService.deduct_goods">(inventory.services.InventoryService static method)</a>
+</li>
+      </ul></li>
+      <li><a href="inventory.html#inventory.models.Goods.deduct_stock">deduct_stock() (inventory.models.Goods method)</a>
+</li>
       <li><a href="customers.html#customers.models.Customer.deduct_wallet">deduct_wallet() (customers.models.Customer method)</a>
 
       <ul>
         <li><a href="customers.html#customers.services.CustomerService.deduct_wallet">(customers.services.CustomerService static method)</a>
 </li>
-        <li><a href="main.html#main.deduct_wallet">(in module main)</a>
+        <li><a href="customers.html#customers.routes.deduct_wallet">(in module customers.routes)</a>
 </li>
       </ul></li>
   </ul></td>
@@ -125,9 +148,11 @@
       <li><a href="customers.html#customers.services.CustomerService.delete_customer">delete_customer() (customers.services.CustomerService static method)</a>
 
       <ul>
-        <li><a href="main.html#main.delete_customer">(in module main)</a>
+        <li><a href="customers.html#customers.routes.delete_customer">(in module customers.routes)</a>
 </li>
       </ul></li>
+      <li><a href="inventory.html#id2">description (inventory.models.Goods attribute)</a>, <a href="inventory.html#inventory.models.Goods.description">[1]</a>
+</li>
   </ul></td>
 </tr></table>
 
@@ -147,14 +172,66 @@
       <li><a href="customers.html#customers.services.CustomerService.get_all_customers">get_all_customers() (customers.services.CustomerService static method)</a>
 
       <ul>
-        <li><a href="main.html#main.get_all_customers">(in module main)</a>
+        <li><a href="customers.html#customers.routes.get_all_customers">(in module customers.routes)</a>
+</li>
+      </ul></li>
+      <li><a href="inventory.html#inventory.routes.get_all_goods">get_all_goods() (in module inventory.routes)</a>
+
+      <ul>
+        <li><a href="inventory.html#inventory.services.InventoryService.get_all_goods">(inventory.services.InventoryService static method)</a>
 </li>
       </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="main.html#main.get_customer">get_customer() (in module main)</a>
+      <li><a href="customers.html#customers.routes.get_customer">get_customer() (in module customers.routes)</a>
 </li>
       <li><a href="customers.html#customers.services.CustomerService.get_customer_by_username">get_customer_by_username() (customers.services.CustomerService static method)</a>
+</li>
+      <li><a href="inventory.html#inventory.routes.get_goods">get_goods() (in module inventory.routes)</a>
+</li>
+      <li><a href="inventory.html#inventory.services.InventoryService.get_goods_by_id">get_goods_by_id() (inventory.services.InventoryService static method)</a>
+</li>
+      <li><a href="inventory.html#inventory.models.Goods">Goods (class in inventory.models)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="I">I</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="inventory.html#id3">id (inventory.models.Goods attribute)</a>, <a href="inventory.html#inventory.models.Goods.id">[1]</a>
+</li>
+      <li>
+    inventory
+
+      <ul>
+        <li><a href="inventory.html#module-inventory">module</a>
+</li>
+      </ul></li>
+      <li>
+    inventory.models
+
+      <ul>
+        <li><a href="inventory.html#module-inventory.models">module</a>
+</li>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li>
+    inventory.routes
+
+      <ul>
+        <li><a href="inventory.html#module-inventory.routes">module</a>
+</li>
+      </ul></li>
+      <li>
+    inventory.services
+
+      <ul>
+        <li><a href="inventory.html#module-inventory.services">module</a>
+</li>
+      </ul></li>
+      <li><a href="inventory.html#inventory.services.InventoryService">InventoryService (class in inventory.services)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -183,9 +260,25 @@
 </li>
         <li><a href="customers.html#module-customers.services">customers.services</a>
 </li>
+        <li><a href="inventory.html#module-inventory">inventory</a>
+</li>
+        <li><a href="inventory.html#module-inventory.models">inventory.models</a>
+</li>
+        <li><a href="inventory.html#module-inventory.routes">inventory.routes</a>
+</li>
+        <li><a href="inventory.html#module-inventory.services">inventory.services</a>
+</li>
         <li><a href="main.html#module-main">main</a>
 </li>
       </ul></li>
+  </ul></td>
+</tr></table>
+
+<h2 id="N">N</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="inventory.html#id4">name (inventory.models.Goods attribute)</a>, <a href="inventory.html#inventory.models.Goods.name">[1]</a>
+</li>
   </ul></td>
 </tr></table>
 
@@ -193,6 +286,18 @@
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="customers.html#customers.models.Customer.password">password (customers.models.Customer attribute)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="inventory.html#id5">price_per_item (inventory.models.Goods attribute)</a>, <a href="inventory.html#inventory.models.Goods.price_per_item">[1]</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="Q">Q</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="inventory.html#inventory.models.Goods.query">query (inventory.models.Goods attribute)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -209,7 +314,11 @@
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="customers.html#customers.models.Customer.to_dict">to_dict() (customers.models.Customer method)</a>
+
+      <ul>
+        <li><a href="inventory.html#inventory.models.Goods.to_dict">(inventory.models.Goods method)</a>
 </li>
+      </ul></li>
   </ul></td>
 </tr></table>
 
@@ -219,11 +328,17 @@
       <li><a href="customers.html#customers.services.CustomerService.update_customer">update_customer() (customers.services.CustomerService static method)</a>
 
       <ul>
-        <li><a href="main.html#main.update_customer">(in module main)</a>
+        <li><a href="customers.html#customers.routes.update_customer">(in module customers.routes)</a>
 </li>
       </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="inventory.html#inventory.routes.update_goods">update_goods() (in module inventory.routes)</a>
+
+      <ul>
+        <li><a href="inventory.html#inventory.services.InventoryService.update_goods">(inventory.services.InventoryService static method)</a>
+</li>
+      </ul></li>
       <li><a href="customers.html#customers.models.Customer.username">username (customers.models.Customer attribute)</a>
 </li>
   </ul></td>
@@ -268,6 +383,7 @@
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="main.html">main module</a></li>
 <li class="toctree-l1"><a class="reference internal" href="customers.html">customers package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="inventory.html">inventory package</a></li>
 </ul>
 
 <div class="relations">
