@@ -1,27 +1,15 @@
-"""
-Main Application Entry Point
-============================
-
-This module initializes the Flask application, sets up the database, and registers blueprints.
-
-Modules:
---------
-- `customers.routes`: Contains customer-related API routes.
-
-Usage:
-------
-Run this file to start the Flask application.
-"""
-
 from flask import Flask
-from customers.routes import customers_blueprint
-from database.db_config import init_db
+from database.db_config import init_db, db
+from inventory.models import Goods  # Import the model
+from inventory.routes import inventory_bp  # Import the Blueprint
 
 app = Flask(__name__)
 init_db(app)
 
-# Register the blueprint for customer routes
-app.register_blueprint(customers_blueprint, url_prefix='/api')
+# Register the Blueprint for inventory
+app.register_blueprint(inventory_bp)
 
 if __name__ == "__main__":
+    with app.app_context():
+        db.create_all()  # Create all tables, including the Goods table
     app.run(debug=True)
