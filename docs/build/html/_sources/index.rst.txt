@@ -11,3 +11,4 @@ Modules
    main
    customers
    inventory
+   sales

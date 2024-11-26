@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>sales.routes &#8212; 435L Final Project 1.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=d1102ebc" />
+    <link rel="stylesheet" type="text/css" href="../../_static/alabaster.css?v=12dfc556" />
+    <script src="../../_static/documentation_options.js?v=f2a433a1"></script>
+    <script src="../../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for sales.routes</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">flask</span> <span class="kn">import</span> <span class="n">Blueprint</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">jsonify</span>
+<span class="kn">from</span> <span class="nn">sales.services</span> <span class="kn">import</span> <span class="n">SalesService</span>
+
+<span class="n">sales_bp</span> <span class="o">=</span> <span class="n">Blueprint</span><span class="p">(</span><span class="s1">&#39;sales&#39;</span><span class="p">,</span> <span class="vm">__name__</span><span class="p">,</span> <span class="n">url_prefix</span><span class="o">=</span><span class="s1">&#39;/sales&#39;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="display_goods">
+<a class="viewcode-back" href="../../sales.html#sales.routes.display_goods">[docs]</a>
+<span class="nd">@sales_bp</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/goods&#39;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;GET&#39;</span><span class="p">])</span>
+<span class="k">def</span> <span class="nf">display_goods</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    API endpoint to retrieve a list of available goods.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Response (JSON): A list of goods with their names and prices.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">goods</span> <span class="o">=</span> <span class="n">SalesService</span><span class="o">.</span><span class="n">display_goods</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">jsonify</span><span class="p">(</span><span class="n">goods</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">jsonify</span><span class="p">({</span><span class="s2">&quot;error&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)}),</span> <span class="mi">400</span></div>
+
+
+<div class="viewcode-block" id="get_good_details">
+<a class="viewcode-back" href="../../sales.html#sales.routes.get_good_details">[docs]</a>
+<span class="nd">@sales_bp</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/goods/&lt;int:good_id&gt;&#39;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;GET&#39;</span><span class="p">])</span>
+<span class="k">def</span> <span class="nf">get_good_details</span><span class="p">(</span><span class="n">good_id</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    API endpoint to retrieve detailed information about a specific good.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        good_id (int): The ID of the good.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Response (JSON): The details of the good or an error message if not found.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">good_details</span> <span class="o">=</span> <span class="n">SalesService</span><span class="o">.</span><span class="n">get_good_details</span><span class="p">(</span><span class="n">good_id</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">jsonify</span><span class="p">(</span><span class="n">good_details</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">ValueError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">jsonify</span><span class="p">({</span><span class="s2">&quot;error&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)}),</span> <span class="mi">404</span></div>
+
+
+<div class="viewcode-block" id="process_sale">
+<a class="viewcode-back" href="../../sales.html#sales.routes.process_sale">[docs]</a>
+<span class="nd">@sales_bp</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/purchase&#39;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;POST&#39;</span><span class="p">])</span>
+<span class="k">def</span> <span class="nf">process_sale</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    API endpoint to process a sale.</span>
+
+<span class="sd">    Expects:</span>
+<span class="sd">        JSON payload with:</span>
+<span class="sd">        - customer_username (str): The username of the customer.</span>
+<span class="sd">        - good_id (int): The ID of the good being purchased.</span>
+<span class="sd">        - quantity (int): The quantity of the good being purchased.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Response (JSON): The sale details if successful or an error message otherwise.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">json</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">sale</span> <span class="o">=</span> <span class="n">SalesService</span><span class="o">.</span><span class="n">process_sale</span><span class="p">(</span>
+            <span class="n">customer_username</span><span class="o">=</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;customer_username&#39;</span><span class="p">],</span>
+            <span class="n">good_id</span><span class="o">=</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;good_id&#39;</span><span class="p">],</span>
+            <span class="n">quantity</span><span class="o">=</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;quantity&#39;</span><span class="p">]</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">jsonify</span><span class="p">(</span><span class="n">sale</span><span class="p">),</span> <span class="mi">201</span>
+    <span class="k">except</span> <span class="ne">ValueError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">jsonify</span><span class="p">({</span><span class="s2">&quot;error&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)}),</span> <span class="mi">400</span></div>
+
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../index.html">435L Final Project</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Modules:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../main.html">main module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../customers.html">customers package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../inventory.html">inventory package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../sales.html">sales package</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.4.7</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>
