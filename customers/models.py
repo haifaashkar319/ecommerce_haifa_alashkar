@@ -1,40 +1,31 @@
-class Customer:
+from database.db_config import db
+
+class Customer(db.Model):
     """
     Represents a customer in the system.
 
     Attributes:
+        id (int): The primary key of the customer record.
         full_name (str): The full name of the customer.
         username (str): The unique username of the customer.
-        password (str): The password for the customer (should ideally be hashed).
+        password (str): The password for the customer (hashed).
         age (int): The age of the customer.
-        address (str, optional): The address of the customer. Defaults to None.
-        gender (str, optional): The gender of the customer. Defaults to None.
-        marital_status (str, optional): The marital status of the customer. Defaults to None.
-        wallet_balance (float, optional): The wallet balance of the customer. Defaults to 0.0.
+        address (str, optional): The address of the customer.
+        gender (str, optional): The gender of the customer.
+        marital_status (str, optional): The marital status of the customer.
+        wallet_balance (float): The wallet balance of the customer.
     """
+    __tablename__ = 'customers'
 
-    def __init__(self, full_name, username, password, age, address=None, gender=None, marital_status=None, wallet_balance=0.0):
-        """
-        Initializes a Customer object.
-
-        Args:
-            full_name (str): The full name of the customer.
-            username (str): The unique username of the customer.
-            password (str): The password for the customer.
-            age (int): The age of the customer.
-            address (str, optional): The address of the customer. Defaults to None.
-            gender (str, optional): The gender of the customer. Defaults to None.
-            marital_status (str, optional): The marital status of the customer. Defaults to None.
-            wallet_balance (float, optional): The wallet balance of the customer. Defaults to 0.0.
-        """
-        self.full_name = full_name
-        self.username = username
-        self.password = password
-        self.age = age
-        self.address = address
-        self.gender = gender
-        self.marital_status = marital_status
-        self.wallet_balance = wallet_balance
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    username = db.Column(db.String(50), unique=True, nullable=False)
+    full_name = db.Column(db.String(100), nullable=False)
+    password = db.Column(db.String(255), nullable=False)
+    age = db.Column(db.Integer, nullable=False)
+    address = db.Column(db.String(255), nullable=True)
+    gender = db.Column(db.String(10), nullable=True)
+    marital_status = db.Column(db.String(20), nullable=True)
+    wallet_balance = db.Column(db.Float, default=0.0)
 
     def charge_wallet(self, amount):
         """
@@ -64,12 +55,13 @@ class Customer:
         Converts the customer object to a dictionary.
 
         Returns:
-            dict: A dictionary representation of the customer object, suitable for API responses.
+            dict: A dictionary representation of the customer object.
         """
         return {
-            "full_name": self.full_name,
+            "id": self.id,
             "username": self.username,
-            "password": self.password,  # Ideally, this would be hashed.
+            "full_name": self.full_name,
+            "password": self.password,  # In production, passwords should be hashed and not exposed.
             "age": self.age,
             "address": self.address,
             "gender": self.gender,
