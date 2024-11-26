@@ -17,7 +17,8 @@ def client():
     sets up and tears down the database between tests.
     """
     app.config['TESTING'] = True
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///:memory:'  # In-memory database for testing
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///:memory:'  # In-memory DB for tests
+    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     with app.test_client() as client:
         with app.app_context():
             db.create_all()  # Create tables for the tests
