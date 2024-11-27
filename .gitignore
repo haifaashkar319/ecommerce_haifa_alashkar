@@ -18,3 +18,5 @@ venv/
 Thumbs.db
 
 mysql_backup/
+docs/build/
+docs/*.rst~
