@@ -5,6 +5,15 @@ from customers.models import Customer
 class CustomerService:
     @staticmethod
     def save_to_db(customer):
+        """
+        Saves a customer object to the database.
+
+        Args:
+            customer (Customer): The customer object to save.
+
+        Returns:
+            None
+        """
         query = text("""
             INSERT INTO customers (full_name, username, password, age, address, gender, marital_status, wallet_balance)
             VALUES (:full_name, :username, :password, :age, :address, :gender, :marital_status, :wallet_balance)
