@@ -11,7 +11,7 @@ def generate_unique_username():
 def test_register_customer(client):
     """Test customer registration."""
     username = generate_unique_username()
-    response = client.post('/api/customer', json={
+    response = client.post('/customer', json={
         "full_name": "Test User",
         "username": username,
         "password": "password",
@@ -27,7 +27,7 @@ def test_register_customer(client):
 def test_get_customer(client):
     """Test retrieving a customer by username."""
     username = generate_unique_username()
-    client.post('/api/customer', json={
+    client.post('/customer', json={
         "full_name": "Test User",
         "username": username,
         "password": "password",
@@ -37,7 +37,7 @@ def test_get_customer(client):
         "marital_status": "Single"
     })
 
-    response = client.get(f'/api/customer/{username}')
+    response = client.get(f'/customer/{username}')
     assert response.status_code == 200
     assert response.json["username"] == username
     assert response.json["full_name"] == "Test User"
@@ -46,21 +46,22 @@ def test_get_customer(client):
 def test_charge_wallet(client):
     """Test charging a customer's wallet."""
     username = generate_unique_username()
-    client.post('/api/customer', json={
+    client.post('/customer', json={
         "full_name": "Test User",
         "username": username,
         "password": "password",
         "age": 30,
         "address": "123 Test St",
         "gender": "Male",
-        "marital_status": "Single"
+        "marital_status": "Single",
+        "wallet_ballance": 0.0
     })
 
-    response = client.post(f'/api/customer/{username}/wallet/charge', json={"amount": 50.0})
+    response = client.post(f'/customer/{username}/wallet/charge', json={"amount": 50.0})
     assert response.status_code == 200
     assert response.json["message"] == "Wallet charged successfully"
 
-    get_response = client.get(f'/api/customer/{username}')
+    get_response = client.get(f'/customer/{username}')
     assert get_response.status_code == 200
     assert get_response.json["wallet_balance"] == 50.0
 
@@ -68,7 +69,7 @@ def test_charge_wallet(client):
 def test_deduct_wallet(client):
     """Test deducting money from a customer's wallet."""
     username = generate_unique_username()
-    client.post('/api/customer', json={
+    client.post('/customer', json={
         "full_name": "Test User",
         "username": username,
         "password": "password",
@@ -78,13 +79,13 @@ def test_deduct_wallet(client):
         "marital_status": "Single"
     })
 
-    client.post(f'/api/customer/{username}/wallet/charge', json={"amount": 100.0})
+    client.post(f'/customer/{username}/wallet/charge', json={"amount": 100.0})
 
-    response = client.post(f'/api/customer/{username}/wallet/deduct', json={"amount": 40.0})
+    response = client.post(f'/customer/{username}/wallet/deduct', json={"amount": 40.0})
     assert response.status_code == 200
     assert response.json["message"] == "Wallet deducted successfully"
 
-    get_response = client.get(f'/api/customer/{username}')
+    get_response = client.get(f'/customer/{username}')
     assert get_response.status_code == 200
     assert get_response.json["wallet_balance"] == 60.0
 
@@ -92,7 +93,7 @@ def test_deduct_wallet(client):
 def test_delete_customer(client):
     """Test deleting a customer."""
     username = generate_unique_username()
-    client.post('/api/customer', json={
+    client.post('/customer', json={
         "full_name": "Test User",
         "username": username,
         "password": "password",
@@ -102,10 +103,10 @@ def test_delete_customer(client):
         "marital_status": "Single"
     })
 
-    response = client.delete(f'/api/customer/{username}')
+    response = client.delete(f'/customer/{username}')
     assert response.status_code == 200
     assert response.json["message"] == "Customer deleted successfully"
 
-    get_response = client.get(f'/api/customer/{username}')
+    get_response = client.get(f'/customer/{username}')
     assert get_response.status_code == 404
     assert get_response.json["error"] == "Customer not found"

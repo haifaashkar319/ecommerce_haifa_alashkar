@@ -1,4 +1,6 @@
 from database.db_config import db
+from sqlalchemy.sql import text  
+
 
 class Customer(db.Model):
     """
@@ -27,28 +29,43 @@ class Customer(db.Model):
     marital_status = db.Column(db.String(20), nullable=True)
     wallet_balance = db.Column(db.Float, default=0.0)
 
-    def charge_wallet(self, amount):
+    @staticmethod
+    def charge_wallet(username, amount):
         """
-        Adds funds to the customer's wallet.
-
-        Args:
-            amount (float): The amount to add to the wallet.
+        Charges a specified amount to a customer's wallet.
         """
-        self.wallet_balance += amount
+        try:
+            query = text("""
+                UPDATE customers
+                SET wallet_balance = wallet_balance + :amount
+                WHERE username = :username
+            """)
+            result = db.session.execute(query, {"amount": amount, "username": username})
+            db.session.commit()
+            return result.rowcount > 0
+        except Exception as e:
+            print(f"Error in charge_wallet: {e}")
+            db.session.rollback()
+            return False
 
-    def deduct_wallet(self, amount):
+    @staticmethod
+    def deduct_wallet(username, amount):
         """
-        Deducts funds from the customer's wallet if sufficient balance exists.
-
-        Args:
-            amount (float): The amount to deduct from the wallet.
-
-        Raises:
-            ValueError: If the amount exceeds the available wallet balance.
+        Deducts funds from a customer's wallet if sufficient balance exists.
         """
-        if amount > self.wallet_balance:
-            raise ValueError("Insufficient funds in wallet.")
-        self.wallet_balance -= amount
+        try:
+            query = text("""
+                UPDATE customers
+                SET wallet_balance = wallet_balance - :amount
+                WHERE username = :username AND wallet_balance >= :amount
+            """)
+            result = db.session.execute(query, {"amount": amount, "username": username})
+            db.session.commit()
+            return result.rowcount > 0
+        except Exception as e:
+            print(f"Error in deduct_wallet: {e}")
+            db.session.rollback()
+            return False
 
     def to_dict(self):
         """

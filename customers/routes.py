@@ -127,40 +127,24 @@ def get_all_customers():
 
 @customers_blueprint.route('/customer/<username>/wallet/charge', methods=['POST'])
 def charge_wallet(username):
-    """
-    Charges an amount to a customer's wallet.
-
-    Args:
-        username (str): The username of the customer to charge.
-
-    Expects a JSON payload with:
-    - amount (float): The amount to charge.
-
-    Returns:
-        Response (JSON): A success message or error if the customer is not found.
-    """
     data = request.json
+    if not data or "amount" not in data:
+        return jsonify({"error": "Amount is required"}), 400
+
     success = CustomerService.charge_wallet(username, data['amount'])
     if not success:
         return jsonify({"error": "Customer not found"}), 404
+
     return jsonify({"message": "Wallet charged successfully"})
 
 @customers_blueprint.route('/customer/<username>/wallet/deduct', methods=['POST'])
 def deduct_wallet(username):
-    """
-    Deducts an amount from a customer's wallet.
-
-    Args:
-        username (str): The username of the customer.
-
-    Expects a JSON payload with:
-    - amount (float): The amount to deduct.
-
-    Returns:
-        Response (JSON): A success message or error if the customer is not found or has insufficient funds.
-    """
     data = request.json
+    if not data or "amount" not in data:
+        return jsonify({"error": "Amount is required"}), 400
+
     success = CustomerService.deduct_wallet(username, data['amount'])
     if not success:
         return jsonify({"error": "Customer not found or insufficient funds"}), 400
+
     return jsonify({"message": "Wallet deducted successfully"})
