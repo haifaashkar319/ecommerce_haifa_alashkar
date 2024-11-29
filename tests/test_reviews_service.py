@@ -3,6 +3,8 @@ import random
 import string
 from database.db_config import db
 from customers.models import Customer
+from sqlalchemy.exc import SQLAlchemyError
+from unittest.mock import patch
 
 
 def generate_unique_username():
@@ -188,3 +190,124 @@ def test_moderate_review(client, setup_customer):
     moderated_review = moderate_response.json
     assert moderated_review["id"] == review_id  # Ensure the ID matches
     assert moderated_review["status"] == "approved"
+
+def test_submit_review_exception(client, setup_customer):
+    """Test exception handling when submitting a review."""
+    username = setup_customer  # Correctly use the returned username
+    with patch("reviews.services.ReviewService.submit_review", side_effect=ValueError("Invalid input")):
+        response = client.post('/reviews/', json={
+            "customer_username": username,
+            "product_id": 999,
+            "rating": 6,  # Invalid rating
+            "comment": "Invalid test review"
+        })
+        assert response.status_code == 400
+        assert response.json["error"] == "Invalid input"
+
+
+
+def test_update_review_exception(client):
+    """Test exception handling when updating a review."""
+    with patch("reviews.services.ReviewService.update_review", side_effect=ValueError("Review not found")):
+        response = client.put('/reviews/999', json={
+            "rating": 4,
+            "comment": "Updated invalid review"
+        })
+        assert response.status_code == 404
+        assert response.json["error"] == "Review not found"
+
+
+def test_delete_review_exception(client):
+    """Test exception handling when deleting a review."""
+    with patch("reviews.services.ReviewService.delete_review", side_effect=ValueError("Review not found")):
+        response = client.delete('/reviews/999')
+        assert response.status_code == 404
+        assert response.json["error"] == "Review not found"
+
+
+def test_get_review_details_exception(client):
+    username = setup_customer
+    """Test exception handling when retrieving review details."""
+    with patch("reviews.services.ReviewService.get_review_details", side_effect=ValueError("Review not found")):
+        response = client.get('/reviews/999')
+        assert response.status_code == 404
+        assert response.json["error"] == "Review not found"
+
+
+def test_moderate_review_exception(client):
+    """Test exception handling when moderating a review."""
+    with patch("reviews.services.ReviewService.moderate_review", side_effect=ValueError("Invalid status")):
+        response = client.put('/reviews/999/moderate', json={"status": "invalid_status"})
+        assert response.status_code == 400
+        assert response.json["error"] == "Invalid status"
+
+
+def test_get_product_reviews_exception(client, mocker):
+    """Test exception handling when retrieving product reviews."""
+    with mocker.patch("reviews.services.ReviewService.get_product_reviews", side_effect=SQLAlchemyError("Database error")):
+        response = client.get('/reviews/product/999')
+        assert response.status_code == 500
+        assert "error" in response.json
+        assert response.json["error"] == "Database error"
+
+
+def test_get_customer_reviews_exception(client, mocker):
+    """Test exception handling when retrieving customer reviews."""
+    with mocker.patch("reviews.services.ReviewService.get_customer_reviews", side_effect=SQLAlchemyError("Database error")):
+        response = client.get('/reviews/customer/nonexistent_user')
+        assert response.status_code == 500
+        assert "error" in response.json
+        assert response.json["error"] == "Database error"
+
+def test_update_review_invalid_rating(client, setup_customer):
+    """Test handling of invalid rating during review update."""
+    username = setup_customer
+
+    # Submit a valid review first
+    review_response = client.post('/reviews/', json={
+        "customer_username": username,
+        "product_id": 1,
+        "rating": 5,
+        "comment": "Initial comment"
+    })
+    assert review_response.status_code == 201
+    review = review_response.json
+    review_id = review["id"]
+
+    # Attempt to update the review with an invalid rating
+    response = client.put(f'/reviews/{review_id}', json={
+        "rating": 6,  # Invalid rating
+        "comment": "Updated comment with invalid rating"
+    })
+    assert response.status_code == 400
+    assert response.json["error"] == "Rating must be between 1 and 5"
+
+
+
+def test_delete_nonexistent_review(client):
+    """Test exception handling when deleting a nonexistent review."""
+    response = client.delete('/reviews/999')
+    assert response.status_code == 404
+    assert response.json["error"] == "Review not found"
+
+
+def test_get_nonexistent_review(client):
+    """Test exception handling when retrieving a nonexistent review."""
+    response = client.get('/reviews/999')
+    assert response.status_code == 404
+    assert response.json["error"] == "Review not found"
+
+
+def test_submit_review_invalid_rating(client, setup_customer):
+    """Test exception handling for invalid rating during review submission."""
+    username = setup_customer
+
+    # Attempt to submit a review with an invalid rating
+    response = client.post('/reviews/', json={
+        "customer_username": username,
+        "product_id": 1,
+        "rating": 0,  # Invalid rating
+        "comment": "Invalid rating test"
+    })
+    assert response.status_code == 400
+    assert response.json["error"] == "Rating must be between 1 and 5"

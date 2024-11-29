@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify
 from reviews.services import ReviewService
-
+from sqlalchemy.exc import SQLAlchemyError
 reviews_bp = Blueprint('reviews', __name__, url_prefix='/reviews')
 
 @reviews_bp.route('/', methods=['POST'])
@@ -46,10 +46,12 @@ def update_review(review_id):
     Returns:
         JSON response:
         - Success: The updated review details (status code 200).
-        - Error: An error message (status code 404).
+        - Error: An error message (status code 404 or 400).
     """
     data = request.json
+    
     try:
+        # Update the review using the service
         review = ReviewService.update_review(
             review_id=review_id,
             rating=data.get('rating'),
@@ -57,7 +59,14 @@ def update_review(review_id):
         )
         return jsonify(review)
     except ValueError as e:
-        return jsonify({"error": str(e)}), 404
+        # Return 400 for validation errors
+        if "Rating must be between 1 and 5" in str(e):
+            return jsonify({"error": str(e)}), 400
+        # Return 404 for not found errors
+        elif "Review not found" in str(e):
+            return jsonify({"error": str(e)}), 404
+        # Handle any unexpected ValueError
+        return jsonify({"error": "An unknown error occurred"}), 400
 
 @reviews_bp.route('/<int:review_id>', methods=['DELETE'])
 def delete_review(review_id):
@@ -89,8 +98,11 @@ def get_product_reviews(product_id):
     Returns:
         JSON response: A list of reviews for the product (status code 200).
     """
-    reviews = ReviewService.get_product_reviews(product_id)
-    return jsonify(reviews)
+    try:
+        reviews = ReviewService.get_product_reviews(product_id)
+        return jsonify(reviews)
+    except SQLAlchemyError as e:
+        return jsonify({"error": str(e)}), 500
 
 @reviews_bp.route('/customer/<string:customer_username>', methods=['GET'])
 def get_customer_reviews(customer_username):
@@ -103,8 +115,12 @@ def get_customer_reviews(customer_username):
     Returns:
         JSON response: A list of reviews by the customer (status code 200).
     """
-    reviews = ReviewService.get_customer_reviews(customer_username)
-    return jsonify(reviews)
+    try:
+        reviews = ReviewService.get_customer_reviews(customer_username)
+        return jsonify(reviews)
+    except SQLAlchemyError as e:
+        return jsonify({"error": str(e)}), 500
+
 
 @reviews_bp.route('/<int:review_id>', methods=['GET'])
 def get_review_details(review_id):
