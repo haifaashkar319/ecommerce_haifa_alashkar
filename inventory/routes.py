@@ -1,5 +1,7 @@
 from flask import Blueprint, request, jsonify
 from inventory.services import InventoryService
+from utils import SECRET_KEY, extract_auth_token, decode_token
+import jwt
 
 inventory_bp = Blueprint('inventory', __name__, url_prefix='/inventory')
 
@@ -7,6 +9,8 @@ inventory_bp = Blueprint('inventory', __name__, url_prefix='/inventory')
 def add_goods():
     """
     API to add new goods to the inventory.
+
+    Requires an Authorization token in the header to identify the user.
 
     Expects:
     - name (str): Name of the goods.
@@ -18,23 +22,37 @@ def add_goods():
     Returns:
         JSON response with the created goods details.
     """
-    data = request.json
-    try:
-        goods = InventoryService.add_goods(
-            name=data['name'],
-            category=data['category'],
-            price_per_item=data['price_per_item'],
-            description=data.get('description'),
-            count_in_stock=data['count_in_stock']
-        )
-        return jsonify(goods), 201
-    except ValueError as e:
-        return jsonify({"error": str(e)}), 400
+    # Extract and validate token
+    header = extract_auth_token(request)
+    if header:
+        try:
+            user_id = decode_token(header)
+        except jwt.ExpiredSignatureError:
+            return jsonify({"error": "Token has expired"}), 403
+        except jwt.InvalidTokenError:
+            return jsonify({"error": "Unauthorized"}), 403
+
+        data = request.json
+        try:
+            goods = InventoryService.add_goods(
+                name=data['name'],
+                category=data['category'],
+                price_per_item=data['price_per_item'],
+                description=data.get('description'),
+                count_in_stock=data['count_in_stock']
+            )
+            return jsonify(goods), 201
+        except ValueError as e:
+            return jsonify({"error": str(e)}), 400
+
+    return jsonify({"error": "Authorization header missing or malformed"}), 403
 
 @inventory_bp.route('/<int:goods_id>', methods=['PUT'])
 def update_goods(goods_id):
     """
     API to update fields of a specific goods item.
+
+    Requires an Authorization token in the header to identify the user.
 
     Args:
         goods_id (int): ID of the goods to update.
@@ -44,17 +62,31 @@ def update_goods(goods_id):
     Returns:
         JSON response with the updated goods details.
     """
-    data = request.json
-    try:
-        goods = InventoryService.update_goods(goods_id, data)
-        return jsonify(goods)
-    except ValueError as e:
-        return jsonify({"error": str(e)}), 400
+    # Extract and validate token
+    header = extract_auth_token(request)
+    if header:
+        try:
+            user_id = decode_token(header)
+        except jwt.ExpiredSignatureError:
+            return jsonify({"error": "Token has expired"}), 403
+        except jwt.InvalidTokenError:
+            return jsonify({"error": "Unauthorized"}), 403
+
+        data = request.json
+        try:
+            goods = InventoryService.update_goods(goods_id, data)
+            return jsonify(goods)
+        except ValueError as e:
+            return jsonify({"error": str(e)}), 400
+
+    return jsonify({"error": "Authorization header missing or malformed"}), 403
 
 @inventory_bp.route('/<int:goods_id>', methods=['DELETE'])
 def deduct_goods(goods_id):
     """
     API to deduct a specific quantity of goods from the inventory.
+
+    Requires an Authorization token in the header to identify the user.
 
     Args:
         goods_id (int): ID of the goods.
@@ -65,12 +97,27 @@ def deduct_goods(goods_id):
     Returns:
         JSON response with the updated goods details.
     """
-    data = request.json
-    try:
-        goods = InventoryService.deduct_goods(goods_id, data['quantity'])
-        return jsonify(goods)
-    except ValueError as e:
-        return jsonify({"error": str(e)}), 400
+    # Extract and validate token
+    header = extract_auth_token(request)
+    if header:
+        try:
+            user_id = decode_token(header)
+        except jwt.ExpiredSignatureError:
+            return jsonify({"error": "Token has expired"}), 403
+        except jwt.InvalidTokenError:
+            return jsonify({"error": "Unauthorized"}), 403
+
+        data = request.json
+        if not data or "quantity" not in data:
+            return jsonify({"error": "Quantity is required"}), 400
+
+        try:
+            goods = InventoryService.deduct_goods(goods_id, data['quantity'])
+            return jsonify(goods)
+        except ValueError as e:
+            return jsonify({"error": str(e)}), 400
+
+    return jsonify({"error": "Authorization header missing or malformed"}), 403
 
 @inventory_bp.route('/<int:goods_id>', methods=['GET'])
 def get_goods(goods_id):

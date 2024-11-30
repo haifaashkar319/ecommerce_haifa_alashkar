@@ -74,6 +74,15 @@ class CustomerService:
         Returns:
             bool: True if the update was successful, False otherwise.
         """
+        # Define all possible fields with default values as None
+        fields = [
+            "full_name", "password", "age", "address",
+            "gender", "marital_status", "wallet_balance"
+        ]
+        # Ensure all fields are present in the updates dictionary
+        updates_with_defaults = {field: updates.get(field) for field in fields}
+        updates_with_defaults["username"] = username
+
         query = text("""
             UPDATE customers
             SET full_name = COALESCE(:full_name, full_name),
@@ -85,12 +94,10 @@ class CustomerService:
                 wallet_balance = COALESCE(:wallet_balance, wallet_balance)
             WHERE username = :username
         """)
-        result = db.session.execute(
-            query, {**updates, "username": username}
-        )
+        result = db.session.execute(query, updates_with_defaults)
         db.session.commit()
         return result.rowcount > 0
-    
+        
     @staticmethod
     def delete_customer(username):
         """
@@ -183,3 +190,4 @@ class CustomerService:
             print(f"Error in deduct_wallet: {e}")
             db.session.rollback()
             return False
+    

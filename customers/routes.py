@@ -22,6 +22,8 @@ Routes:
 from flask import Blueprint, request, jsonify
 from customers.services import CustomerService
 from customers.models import Customer
+from utils import SECRET_KEY, create_token, extract_auth_token, decode_token, save_token
+import jwt
 
 # Create a Blueprint for customer routes
 customers_blueprint = Blueprint('customers', __name__)
@@ -56,6 +58,27 @@ def create_customer():
     CustomerService.save_to_db(customer)
     return jsonify({"message": "Customer created successfully"}), 201
 
+@customers_blueprint.route('/login', methods=['POST'])
+def login():
+    data = request.json
+    username = data.get("username")
+    password = data.get("password")
+
+    # Verify user credentials
+    customer = Customer.query.filter_by(username=username).first()
+    if not customer or customer.password != password:
+        return jsonify({"error": "Invalid username or password"}), 401
+
+    # Generate JWT
+    token = create_token(customer.id)
+    print(f"DEBUG: Generated token for customer ID {customer.id}: {token}")
+
+    # Save token
+    save_token("Created Token", token)
+
+    return jsonify({"access_token": token}), 200
+
+
 @customers_blueprint.route('/customer/<username>', methods=['PUT'])
 def update_customer(username):
     """
@@ -63,6 +86,8 @@ def update_customer(username):
 
     Args:
         username (str): The username of the customer to update.
+
+    Requires an Authorization token in the header to identify the user.
 
     Expects a JSON payload with any of the following fields:
     - full_name (str, optional)
@@ -76,11 +101,28 @@ def update_customer(username):
     Returns:
         Response (JSON): A success message or error if the customer is not found.
     """
-    data = request.json
-    success = CustomerService.update_customer(username, data)
-    if not success:
-        return jsonify({"error": "Customer not found"}), 404
-    return jsonify({"message": "Customer updated successfully"})
+    # Extract and validate token
+    header = extract_auth_token(request)
+    if header:
+        try:
+            user_id = decode_token(header)
+        except jwt.ExpiredSignatureError:
+            return jsonify({"error": "Token has expired"}), 403
+        except jwt.InvalidTokenError:
+            return jsonify({"error": "Unauthorized"}), 403
+
+        # Verify user identity
+        customer = Customer.query.get(user_id)
+        if not customer or customer.username != username:
+            return jsonify({"error": "Unauthorized"}), 403
+
+        data = request.json
+        success = CustomerService.update_customer(username, data)
+        if not success:
+            return jsonify({"error": "Customer not found"}), 404
+        return jsonify({"message": "Customer updated successfully"})
+
+    return jsonify({"error": "Authorization header missing or malformed"}), 403
 
 @customers_blueprint.route('/customer/<username>', methods=['DELETE'])
 def delete_customer(username):
@@ -90,13 +132,32 @@ def delete_customer(username):
     Args:
         username (str): The username of the customer to delete.
 
+    Requires an Authorization token in the header to identify the user.
+
     Returns:
         Response (JSON): A success message or error if the customer is not found.
     """
-    success = CustomerService.delete_customer(username)
-    if not success:
-        return jsonify({"error": "Customer not found"}), 404
-    return jsonify({"message": "Customer deleted successfully"})
+    # Extract and validate token
+    header = extract_auth_token(request)
+    if header:
+        try:
+            user_id = decode_token(header)
+        except jwt.ExpiredSignatureError:
+            return jsonify({"error": "Token has expired"}), 403
+        except jwt.InvalidTokenError:
+            return jsonify({"error": "Unauthorized"}), 403
+
+        # Verify user identity
+        customer = Customer.query.get(user_id)
+        if not customer or customer.username != username:
+            return jsonify({"error": "Unauthorized"}), 403
+
+        success = CustomerService.delete_customer(username)
+        if not success:
+            return jsonify({"error": "Customer not found"}), 404
+        return jsonify({"message": "Customer deleted successfully"})
+
+    return jsonify({"error": "Authorization header missing or malformed"}), 403
 
 @customers_blueprint.route('/customer/<username>', methods=['GET'])
 def get_customer(username):
@@ -127,24 +188,88 @@ def get_all_customers():
 
 @customers_blueprint.route('/customer/<username>/wallet/charge', methods=['POST'])
 def charge_wallet(username):
-    data = request.json
-    if not data or "amount" not in data:
-        return jsonify({"error": "Amount is required"}), 400
+    """
+    Charges an amount to a customer's wallet.
 
-    success = CustomerService.charge_wallet(username, data['amount'])
-    if not success:
-        return jsonify({"error": "Customer not found"}), 404
+    Args:
+        username (str): The username of the customer.
 
-    return jsonify({"message": "Wallet charged successfully"})
+    Requires an Authorization token in the header to identify the user.
+
+    Expects a JSON payload with:
+    - amount (float): The amount to charge.
+
+    Returns:
+        Response (JSON): A success message or error if the customer is not found.
+    """
+    # Extract and validate token
+    header = extract_auth_token(request)
+    if header:
+        try:
+            user_id = decode_token(header)
+        except jwt.ExpiredSignatureError:
+            return jsonify({"error": "Token has expired"}), 403
+        except jwt.InvalidTokenError:
+            return jsonify({"error": "Unauthorized"}), 403
+
+        # Verify user identity
+        customer = Customer.query.get(user_id)
+        if not customer or customer.username != username:
+            return jsonify({"error": "Unauthorized"}), 403
+
+        # Process wallet charge
+        data = request.json
+        if not data or "amount" not in data:
+            return jsonify({"error": "Amount is required"}), 400
+
+        success = CustomerService.charge_wallet(username, data['amount'])
+        if not success:
+            return jsonify({"error": "Customer not found"}), 404
+
+        return jsonify({"message": "Wallet charged successfully"})
+
+    return jsonify({"error": "Authorization header missing or malformed"}), 403
 
 @customers_blueprint.route('/customer/<username>/wallet/deduct', methods=['POST'])
 def deduct_wallet(username):
-    data = request.json
-    if not data or "amount" not in data:
-        return jsonify({"error": "Amount is required"}), 400
+    """
+    Deducts an amount from a customer's wallet.
 
-    success = CustomerService.deduct_wallet(username, data['amount'])
-    if not success:
-        return jsonify({"error": "Customer not found or insufficient funds"}), 400
+    Args:
+        username (str): The username of the customer.
 
-    return jsonify({"message": "Wallet deducted successfully"})
+    Requires an Authorization token in the header to identify the user.
+
+    Expects a JSON payload with:
+    - amount (float): The amount to deduct.
+
+    Returns:
+        Response (JSON): A success message or error if the customer is not found or if insufficient funds.
+    """
+    # Extract and validate token
+    header = extract_auth_token(request)
+    if header:
+        try:
+            user_id = decode_token(header)
+        except jwt.ExpiredSignatureError:
+            return jsonify({"error": "Token has expired"}), 403
+        except jwt.InvalidTokenError:
+            return jsonify({"error": "Unauthorized"}), 403
+
+        # Verify user identity
+        customer = Customer.query.get(user_id)
+        if not customer or customer.username != username:
+            return jsonify({"error": "Unauthorized"}), 403
+
+        # Process wallet deduction
+        data = request.json
+        if not data or "amount" not in data:
+            return jsonify({"error": "Amount is required"}), 400
+
+        success = CustomerService.deduct_wallet(username, data['amount'])
+        if not success:
+            return jsonify({"error": "Customer not found or insufficient funds"}), 400
+
+        return jsonify({"message": "Wallet deducted successfully"})
+
+    return jsonify({"error": "Authorization header missing or malformed"}), 403

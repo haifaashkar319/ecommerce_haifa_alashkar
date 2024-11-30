@@ -9,9 +9,15 @@ from customers.routes import customers_blueprint
 from customers.models import Customer
 from reviews.models import Review
 from reviews.routes import reviews_bp
+from flask_jwt_extended import JWTManager
+
 
 app = Flask(__name__)
 init_db(app)
+
+# Add the following to your app initialization
+app.config['JWT_SECRET_KEY'] = 'your-secret-key'  # Replace with a secure key
+jwt = JWTManager(app)
 
 # Register Blueprints
 app.register_blueprint(inventory_bp)

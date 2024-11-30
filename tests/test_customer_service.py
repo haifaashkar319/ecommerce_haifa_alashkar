@@ -6,7 +6,8 @@ from database.db_config import db
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from unittest.mock import patch, MagicMock
 from customers.services import CustomerService
-
+from profile_tests import profile_test 
+from memory_tests import log_memory
 
 def generate_unique_username():
     """Generate a random unique username for each test."""
@@ -14,6 +15,8 @@ def generate_unique_username():
 
 
 ### ROUTE TESTS ###
+@profile_test
+@log_memory(output_file="customers_api_memory_usage.log")
 def test_register_customer(client):
     """Test customer registration."""
     username = generate_unique_username()
@@ -29,7 +32,8 @@ def test_register_customer(client):
     assert response.status_code == 201
     assert response.json["message"] == "Customer created successfully"
 
-
+@profile_test
+@log_memory(output_file="customers_api_memory_usage.log")
 def test_get_customer(client):
     """Test retrieving a customer by username."""
     username = generate_unique_username()
@@ -48,7 +52,8 @@ def test_get_customer(client):
     assert response.json["username"] == username
     assert response.json["full_name"] == "Test User"
 
-
+@profile_test
+@log_memory(output_file="customers_api_memory_usage.log")
 def test_charge_wallet(client):
     """Test charging a customer's wallet."""
     username = generate_unique_username()
@@ -70,7 +75,8 @@ def test_charge_wallet(client):
     assert get_response.status_code == 200
     assert get_response.json["wallet_balance"] == 50.0
 
-
+@profile_test
+@log_memory(output_file="customers_api_memory_usage.log")
 def test_deduct_wallet(client):
     """Test deducting money from a customer's wallet."""
     username = generate_unique_username()
@@ -94,7 +100,8 @@ def test_deduct_wallet(client):
     assert get_response.status_code == 200
     assert get_response.json["wallet_balance"] == 60.0
 
-
+@profile_test
+@log_memory(output_file="customers_api_memory_usage.log")
 def test_delete_customer(client):
     """Test deleting a customer."""
     username = generate_unique_username()

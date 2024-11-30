@@ -35,3 +35,24 @@ flask-start:
 flask-stop:
 	@echo "Stopping Flask app..."
 	@pkill -f $(FLASK_APP) || echo "Flask app is not running."
+
+# Testing Commands
+test-reviews:
+	@echo "Running tests for reviews service..."
+	pytest -s tests/test_reviews_service.py -W ignore::DeprecationWarning
+
+test-customers:
+	@echo "Running tests for customers service..."
+	pytest -s tests/test_customer_service.py -W ignore::DeprecationWarning
+
+test-inventory:
+	@echo "Running tests for inventory service..."
+	pytest -s tests/test_inventory_service.py -W ignore::DeprecationWarning
+
+test-sales:
+	@echo "Running tests for sales service..."
+	pytest -s tests/test_sales_service.py -W ignore::DeprecationWarning
+
+test-all:
+	@echo "Running all tests..."
+	pytest -s tests/ -W ignore::DeprecationWarning

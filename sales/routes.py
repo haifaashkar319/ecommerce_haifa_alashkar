@@ -1,6 +1,7 @@
 from flask import Blueprint, request, jsonify
 from sales.services import SalesService
-
+from utils import SECRET_KEY, extract_auth_token, decode_token
+import jwt
 sales_bp = Blueprint('sales', __name__, url_prefix='/sales')
 
 @sales_bp.route('/goods', methods=['GET'])
@@ -39,22 +40,45 @@ def process_sale():
     """
     API endpoint to process a sale.
 
+    Requires an Authorization token in the header to identify the user.
+
     Expects:
         JSON payload with:
-        - customer_username (str): The username of the customer.
         - good_id (int): The ID of the good being purchased.
         - quantity (int): The quantity of the good being purchased.
 
     Returns:
         Response (JSON): The sale details if successful or an error message otherwise.
     """
-    data = request.json
-    try:
-        sale = SalesService.process_sale(
-            customer_username=data['customer_username'],
-            good_id=data['good_id'],
-            quantity=data['quantity']
-        )
-        return jsonify(sale), 201
-    except ValueError as e:
-        return jsonify({"error": str(e)}), 400
+    # Extract and validate token
+    header = extract_auth_token(request)
+    if header:
+        try:
+            user_id = decode_token(header)
+        except jwt.ExpiredSignatureError:
+            return jsonify({"error": "Token has expired"}), 403
+        except jwt.InvalidTokenError:
+            return jsonify({"error": "Unauthorized"}), 403
+
+        # Parse sale details from request
+        data = request.json
+        good_id = data.get('good_id')
+        quantity = data.get('quantity')
+
+        # Input validation
+        if not good_id or not quantity:
+            return jsonify({"error": "Good ID and quantity are required"}), 400
+
+        try:
+            # Process the sale using the service
+            sale = SalesService.process_sale(
+                customer_id=user_id,
+                good_id=good_id,
+                quantity=quantity
+            )
+            return jsonify(sale), 201
+        except ValueError as e:
+            return jsonify({"error": str(e)}), 400
+
+    # If no header or invalid header
+    return jsonify({"error": "Authorization header missing or malformed"}), 403

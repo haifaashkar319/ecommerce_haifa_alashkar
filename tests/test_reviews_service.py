@@ -5,6 +5,8 @@ from database.db_config import db
 from customers.models import Customer
 from sqlalchemy.exc import SQLAlchemyError
 from unittest.mock import patch
+from profile_tests import profile_test 
+from memory_tests import log_memory
 
 
 def generate_unique_username():
@@ -30,7 +32,8 @@ def setup_customer(client):
         db.session.commit()
     return username
 
-
+@profile_test
+@log_memory(output_file="reviews_api_memory_usage.log")
 def test_submit_review(client, setup_customer):
     """Test submitting a review."""
     username = setup_customer
@@ -51,7 +54,8 @@ def test_submit_review(client, setup_customer):
     assert review["rating"] == 5
     assert review["comment"] == "Excellent product!"
 
-
+@profile_test
+@log_memory(output_file="reviews_api_memory_usage.log")
 def test_update_review(client, setup_customer):
     """Test updating a review."""
     username = setup_customer
@@ -79,7 +83,8 @@ def test_update_review(client, setup_customer):
     assert updated_review["rating"] == 4
     assert updated_review["comment"] == "Good product."
 
-
+@profile_test
+@log_memory(output_file="reviews_api_memory_usage.log")
 def test_delete_review(client, setup_customer):
     """Test deleting a review."""
     username = setup_customer
@@ -101,7 +106,8 @@ def test_delete_review(client, setup_customer):
     assert delete_response.status_code == 200
     assert delete_response.json["message"] == "Review deleted successfully"
 
-
+@profile_test
+@log_memory(output_file="reviews_api_memory_usage.log")
 def test_get_product_reviews(client):
     """Test retrieving all reviews for a product."""
     product_id = 1
@@ -165,7 +171,8 @@ def test_get_product_reviews(client):
     assert any(review["customer_username"] == username1 for review in reviews)
     assert any(review["customer_username"] == username2 for review in reviews)
 
-
+@profile_test
+@log_memory(output_file="reviews_api_memory_usage.log")
 def test_moderate_review(client, setup_customer):
     """Test moderating a review."""
     username = setup_customer

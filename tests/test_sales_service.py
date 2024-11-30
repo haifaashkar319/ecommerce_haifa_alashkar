@@ -2,6 +2,8 @@ import pytest
 import random
 import string
 from database.db_config import db
+from profile_tests import profile_test 
+from memory_tests import log_memory
 
 def generate_unique_customer_username():
     """Generate a random unique username for a customer."""
@@ -11,6 +13,8 @@ def generate_unique_good_name():
     """Generate a random unique name for a good."""
     return "good_" + ''.join(random.choices(string.ascii_lowercase + string.digits, k=6))
 
+@profile_test
+@log_memory(output_file="sales_api_memory_usage.log")
 def test_create_customer(client):
     """Test creating a new customer."""
     customer_username = generate_unique_customer_username()
@@ -26,6 +30,8 @@ def test_create_customer(client):
     assert response.status_code == 201, f"Customer creation failed: {response.json}"
     assert response.json["message"] == "Customer created successfully"
 
+@profile_test
+@log_memory(output_file="sales_api_memory_usage.log")
 def test_process_sale_success(client):
     """Test processing a successful sale."""
     # Add a customer
@@ -71,6 +77,8 @@ def test_process_sale_success(client):
     assert sale_data["good_id"] == good_id
     assert sale_data["quantity"] == 1
 
+@profile_test
+@log_memory(output_file="sales_api_memory_usage.log")
 def test_process_sale_insufficient_wallet(client):
     """Test sale fails due to insufficient wallet balance."""
     # Add a customer with insufficient funds
@@ -113,6 +121,8 @@ def test_process_sale_insufficient_wallet(client):
     assert sale_response.status_code == 400, f"Expected failure but got: {sale_response.json}"
     assert "Insufficient wallet balance" in sale_response.json["error"]
 
+@profile_test
+@log_memory(output_file="sales_api_memory_usage.log")
 def test_process_sale_insufficient_stock(client):
     """Test sale fails due to insufficient stock."""
     # Add a customer with sufficient funds
