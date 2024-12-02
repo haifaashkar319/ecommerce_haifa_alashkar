@@ -6,6 +6,8 @@ __pycache__/
 
 # Virtual environment
 venv/
+docs/build/_static
+mysql_backup
 
 # Database files
 *.sqlite3
