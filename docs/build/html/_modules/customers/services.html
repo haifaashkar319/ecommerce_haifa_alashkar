@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>customers.services &#8212; 435L Final Project 1.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=d1102ebc" />
+    <link rel="stylesheet" type="text/css" href="../../_static/alabaster.css?v=12dfc556" />
+    <script src="../../_static/documentation_options.js?v=f2a433a1"></script>
+    <script src="../../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for customers.services</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">sqlalchemy.sql</span> <span class="kn">import</span> <span class="n">text</span>  
+<span class="kn">from</span> <span class="nn">database.db_config</span> <span class="kn">import</span> <span class="n">db</span>
+<span class="kn">from</span> <span class="nn">customers.models</span> <span class="kn">import</span> <span class="n">Customer</span>
+
+<div class="viewcode-block" id="CustomerService">
+<a class="viewcode-back" href="../../customers.html#customers.services.CustomerService">[docs]</a>
+<span class="k">class</span> <span class="nc">CustomerService</span><span class="p">:</span>
+<div class="viewcode-block" id="CustomerService.save_to_db">
+<a class="viewcode-back" href="../../customers.html#customers.services.CustomerService.save_to_db">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">save_to_db</span><span class="p">(</span><span class="n">customer</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Saves a customer object to the database.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            customer (Customer): The customer object to save.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">query</span> <span class="o">=</span> <span class="n">text</span><span class="p">(</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">            INSERT INTO customers (full_name, username, password, age, address, gender, marital_status, wallet_balance, role)</span>
+<span class="s2">            VALUES (:full_name, :username, :password, :age, :address, :gender, :marital_status, :wallet_balance, :role)</span>
+<span class="s2">        &quot;&quot;&quot;</span><span class="p">)</span>
+        <span class="n">db</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
+            <span class="n">query</span><span class="p">,</span>
+            <span class="p">{</span>
+                <span class="s2">&quot;full_name&quot;</span><span class="p">:</span> <span class="n">customer</span><span class="o">.</span><span class="n">full_name</span><span class="p">,</span>
+                <span class="s2">&quot;username&quot;</span><span class="p">:</span> <span class="n">customer</span><span class="o">.</span><span class="n">username</span><span class="p">,</span>
+                <span class="s2">&quot;password&quot;</span><span class="p">:</span> <span class="n">customer</span><span class="o">.</span><span class="n">password</span><span class="p">,</span>
+                <span class="s2">&quot;age&quot;</span><span class="p">:</span> <span class="n">customer</span><span class="o">.</span><span class="n">age</span><span class="p">,</span>
+                <span class="s2">&quot;address&quot;</span><span class="p">:</span> <span class="n">customer</span><span class="o">.</span><span class="n">address</span><span class="p">,</span>
+                <span class="s2">&quot;gender&quot;</span><span class="p">:</span> <span class="n">customer</span><span class="o">.</span><span class="n">gender</span><span class="p">,</span>
+                <span class="s2">&quot;marital_status&quot;</span><span class="p">:</span> <span class="n">customer</span><span class="o">.</span><span class="n">marital_status</span><span class="p">,</span>
+                <span class="s2">&quot;wallet_balance&quot;</span><span class="p">:</span> <span class="n">customer</span><span class="o">.</span><span class="n">wallet_balance</span> <span class="ow">or</span> <span class="mf">0.0</span><span class="p">,</span>  <span class="c1"># Ensure 0.0 if None</span>
+                <span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="n">customer</span><span class="o">.</span><span class="n">role</span>  <span class="c1"># Include role in the query</span>
+            <span class="p">},</span>
+        <span class="p">)</span>
+        <span class="n">db</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="CustomerService.get_customer_by_username">
+<a class="viewcode-back" href="../../customers.html#customers.services.CustomerService.get_customer_by_username">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">get_customer_by_username</span><span class="p">(</span><span class="n">username</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Fetches a customer record from the database by username.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            username (str): The username of the customer.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Customer or None: The customer object if found, otherwise None.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">query</span> <span class="o">=</span> <span class="n">text</span><span class="p">(</span><span class="s2">&quot;SELECT * FROM customers WHERE username = :username&quot;</span><span class="p">)</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">query</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;username&quot;</span><span class="p">:</span> <span class="n">username</span><span class="p">})</span><span class="o">.</span><span class="n">mappings</span><span class="p">()</span><span class="o">.</span><span class="n">fetchone</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">result</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+
+        <span class="k">return</span> <span class="n">Customer</span><span class="p">(</span>
+            <span class="n">full_name</span><span class="o">=</span><span class="n">result</span><span class="p">[</span><span class="s2">&quot;full_name&quot;</span><span class="p">],</span>
+            <span class="n">username</span><span class="o">=</span><span class="n">result</span><span class="p">[</span><span class="s2">&quot;username&quot;</span><span class="p">],</span>
+            <span class="n">password</span><span class="o">=</span><span class="n">result</span><span class="p">[</span><span class="s2">&quot;password&quot;</span><span class="p">],</span>
+            <span class="n">age</span><span class="o">=</span><span class="n">result</span><span class="p">[</span><span class="s2">&quot;age&quot;</span><span class="p">],</span>
+            <span class="n">address</span><span class="o">=</span><span class="n">result</span><span class="p">[</span><span class="s2">&quot;address&quot;</span><span class="p">],</span>
+            <span class="n">gender</span><span class="o">=</span><span class="n">result</span><span class="p">[</span><span class="s2">&quot;gender&quot;</span><span class="p">],</span>
+            <span class="n">marital_status</span><span class="o">=</span><span class="n">result</span><span class="p">[</span><span class="s2">&quot;marital_status&quot;</span><span class="p">],</span>
+            <span class="n">wallet_balance</span><span class="o">=</span><span class="n">result</span><span class="p">[</span><span class="s2">&quot;wallet_balance&quot;</span><span class="p">]</span> <span class="ow">or</span> <span class="mf">0.0</span><span class="p">,</span>
+        <span class="p">)</span></div>
+
+    
+<div class="viewcode-block" id="CustomerService.update_customer">
+<a class="viewcode-back" href="../../customers.html#customers.services.CustomerService.update_customer">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">update_customer</span><span class="p">(</span><span class="n">username</span><span class="p">,</span> <span class="n">updates</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Updates a customer&#39;s information.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            username (str): The username of the customer.</span>
+<span class="sd">            updates (dict): A dictionary of fields to update.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            bool: True if the update was successful, False otherwise.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Define all possible fields with default values as None</span>
+        <span class="n">fields</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="s2">&quot;full_name&quot;</span><span class="p">,</span> <span class="s2">&quot;password&quot;</span><span class="p">,</span> <span class="s2">&quot;age&quot;</span><span class="p">,</span> <span class="s2">&quot;address&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;gender&quot;</span><span class="p">,</span> <span class="s2">&quot;marital_status&quot;</span><span class="p">,</span> <span class="s2">&quot;wallet_balance&quot;</span>
+        <span class="p">]</span>
+        <span class="c1"># Ensure all fields are present in the updates dictionary</span>
+        <span class="n">updates_with_defaults</span> <span class="o">=</span> <span class="p">{</span><span class="n">field</span><span class="p">:</span> <span class="n">updates</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">field</span><span class="p">)</span> <span class="k">for</span> <span class="n">field</span> <span class="ow">in</span> <span class="n">fields</span><span class="p">}</span>
+        <span class="n">updates_with_defaults</span><span class="p">[</span><span class="s2">&quot;username&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">username</span>
+
+        <span class="n">query</span> <span class="o">=</span> <span class="n">text</span><span class="p">(</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">            UPDATE customers</span>
+<span class="s2">            SET full_name = COALESCE(:full_name, full_name),</span>
+<span class="s2">                password = COALESCE(:password, password),</span>
+<span class="s2">                age = COALESCE(:age, age),</span>
+<span class="s2">                address = COALESCE(:address, address),</span>
+<span class="s2">                gender = COALESCE(:gender, gender),</span>
+<span class="s2">                marital_status = COALESCE(:marital_status, marital_status),</span>
+<span class="s2">                wallet_balance = COALESCE(:wallet_balance, wallet_balance)</span>
+<span class="s2">            WHERE username = :username</span>
+<span class="s2">        &quot;&quot;&quot;</span><span class="p">)</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">query</span><span class="p">,</span> <span class="n">updates_with_defaults</span><span class="p">)</span>
+        <span class="n">db</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">result</span><span class="o">.</span><span class="n">rowcount</span> <span class="o">&gt;</span> <span class="mi">0</span></div>
+
+        
+<div class="viewcode-block" id="CustomerService.delete_customer">
+<a class="viewcode-back" href="../../customers.html#customers.services.CustomerService.delete_customer">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">delete_customer</span><span class="p">(</span><span class="n">username</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Deletes a customer from the database.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            username (str): The username of the customer.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            bool: True if the deletion was successful, False otherwise.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">query</span> <span class="o">=</span> <span class="n">text</span><span class="p">(</span><span class="s2">&quot;DELETE FROM customers WHERE username = :username&quot;</span><span class="p">)</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">query</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;username&quot;</span><span class="p">:</span> <span class="n">username</span><span class="p">})</span>
+        <span class="n">db</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">result</span><span class="o">.</span><span class="n">rowcount</span> <span class="o">&gt;</span> <span class="mi">0</span></div>
+
+
+<div class="viewcode-block" id="CustomerService.get_all_customers">
+<a class="viewcode-back" href="../../customers.html#customers.services.CustomerService.get_all_customers">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">get_all_customers</span><span class="p">():</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Fetches all customers from the database.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            list: A list of customer dictionaries.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">query</span> <span class="o">=</span> <span class="n">text</span><span class="p">(</span><span class="s2">&quot;SELECT * FROM customers&quot;</span><span class="p">)</span>
+        <span class="n">results</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">query</span><span class="p">)</span><span class="o">.</span><span class="n">mappings</span><span class="p">()</span><span class="o">.</span><span class="n">fetchall</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="p">[</span><span class="n">Customer</span><span class="p">(</span>
+            <span class="n">full_name</span><span class="o">=</span><span class="n">result</span><span class="p">[</span><span class="s2">&quot;full_name&quot;</span><span class="p">],</span>
+            <span class="n">username</span><span class="o">=</span><span class="n">result</span><span class="p">[</span><span class="s2">&quot;username&quot;</span><span class="p">],</span>
+            <span class="n">password</span><span class="o">=</span><span class="n">result</span><span class="p">[</span><span class="s2">&quot;password&quot;</span><span class="p">],</span>
+            <span class="n">age</span><span class="o">=</span><span class="n">result</span><span class="p">[</span><span class="s2">&quot;age&quot;</span><span class="p">],</span>
+            <span class="n">address</span><span class="o">=</span><span class="n">result</span><span class="p">[</span><span class="s2">&quot;address&quot;</span><span class="p">],</span>
+            <span class="n">gender</span><span class="o">=</span><span class="n">result</span><span class="p">[</span><span class="s2">&quot;gender&quot;</span><span class="p">],</span>
+            <span class="n">marital_status</span><span class="o">=</span><span class="n">result</span><span class="p">[</span><span class="s2">&quot;marital_status&quot;</span><span class="p">],</span>
+            <span class="n">wallet_balance</span><span class="o">=</span><span class="n">result</span><span class="p">[</span><span class="s2">&quot;wallet_balance&quot;</span><span class="p">]</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span> <span class="k">for</span> <span class="n">result</span> <span class="ow">in</span> <span class="n">results</span><span class="p">]</span></div>
+
+        
+<div class="viewcode-block" id="CustomerService.charge_wallet">
+<a class="viewcode-back" href="../../customers.html#customers.services.CustomerService.charge_wallet">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">charge_wallet</span><span class="p">(</span><span class="n">username</span><span class="p">,</span> <span class="n">amount</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Charges a specified amount to a customer&#39;s wallet.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="c1"># Log the wallet balance before update</span>
+            <span class="n">pre_query</span> <span class="o">=</span> <span class="n">text</span><span class="p">(</span><span class="s2">&quot;SELECT wallet_balance FROM customers WHERE username = :username&quot;</span><span class="p">)</span>
+            <span class="n">pre_result</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">pre_query</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;username&quot;</span><span class="p">:</span> <span class="n">username</span><span class="p">})</span><span class="o">.</span><span class="n">mappings</span><span class="p">()</span><span class="o">.</span><span class="n">fetchone</span><span class="p">()</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;DEBUG: Pre-update wallet balance for </span><span class="si">{</span><span class="n">username</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">pre_result</span><span class="p">[</span><span class="s1">&#39;wallet_balance&#39;</span><span class="p">]</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">pre_result</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s1">&#39;Customer not found&#39;</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+            <span class="c1"># Perform the update</span>
+            <span class="n">query</span> <span class="o">=</span> <span class="n">text</span><span class="p">(</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">                UPDATE customers</span>
+<span class="s2">                SET wallet_balance = wallet_balance + :amount</span>
+<span class="s2">                WHERE username = :username</span>
+<span class="s2">            &quot;&quot;&quot;</span><span class="p">)</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">query</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;amount&quot;</span><span class="p">:</span> <span class="n">amount</span><span class="p">,</span> <span class="s2">&quot;username&quot;</span><span class="p">:</span> <span class="n">username</span><span class="p">})</span>
+
+            <span class="c1"># Log the result of the update query</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;DEBUG: Update query result rowcount for </span><span class="si">{</span><span class="n">username</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">result</span><span class="o">.</span><span class="n">rowcount</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+            <span class="n">db</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
+
+            <span class="c1"># Log the wallet balance after update</span>
+            <span class="n">post_query</span> <span class="o">=</span> <span class="n">text</span><span class="p">(</span><span class="s2">&quot;SELECT wallet_balance FROM customers WHERE username = :username&quot;</span><span class="p">)</span>
+            <span class="n">post_result</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">post_query</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;username&quot;</span><span class="p">:</span> <span class="n">username</span><span class="p">})</span><span class="o">.</span><span class="n">mappings</span><span class="p">()</span><span class="o">.</span><span class="n">fetchone</span><span class="p">()</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;DEBUG: Post-update wallet balance for </span><span class="si">{</span><span class="n">username</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">post_result</span><span class="p">[</span><span class="s1">&#39;wallet_balance&#39;</span><span class="p">]</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">post_result</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s1">&#39;Customer not found&#39;</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+            <span class="k">return</span> <span class="n">result</span><span class="o">.</span><span class="n">rowcount</span> <span class="o">&gt;</span> <span class="mi">0</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error in charge_wallet: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">db</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">rollback</span><span class="p">()</span>
+            <span class="k">return</span> <span class="kc">False</span></div>
+
+
+
+<div class="viewcode-block" id="CustomerService.deduct_wallet">
+<a class="viewcode-back" href="../../customers.html#customers.services.CustomerService.deduct_wallet">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">deduct_wallet</span><span class="p">(</span><span class="n">username</span><span class="p">,</span> <span class="n">amount</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Deducts funds from a customer&#39;s wallet if sufficient balance exists.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">query</span> <span class="o">=</span> <span class="n">text</span><span class="p">(</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">                UPDATE customers</span>
+<span class="s2">                SET wallet_balance = wallet_balance - :amount</span>
+<span class="s2">                WHERE username = :username AND wallet_balance &gt;= :amount</span>
+<span class="s2">            &quot;&quot;&quot;</span><span class="p">)</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">query</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;amount&quot;</span><span class="p">:</span> <span class="n">amount</span><span class="p">,</span> <span class="s2">&quot;username&quot;</span><span class="p">:</span> <span class="n">username</span><span class="p">})</span>
+            <span class="n">db</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
+            <span class="k">return</span> <span class="n">result</span><span class="o">.</span><span class="n">rowcount</span> <span class="o">&gt;</span> <span class="mi">0</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error in deduct_wallet: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">db</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">rollback</span><span class="p">()</span>
+            <span class="k">return</span> <span class="kc">False</span></div>
+</div>
+
+    
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../index.html">435L Final Project</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Modules:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../main.html">main module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../customers.html">customers package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../inventory.html">inventory package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../sales.html">sales package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../reviews.html">Reviews Package</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.4.7</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>
