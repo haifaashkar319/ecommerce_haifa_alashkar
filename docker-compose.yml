@@ -1,0 +1,57 @@
+version: '3.9'
+
+services:
+  db:
+    image: mysql:latest
+    container_name: ecommerce-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: Haifa319*
+      MYSQL_DATABASE: ecommerce_db
+    ports:
+      - "3307:3306" # Expose the database for testing on host
+    volumes:
+      - db_data:/var/lib/mysql
+
+  customers:
+    build:
+      context: ./customers
+    ports:
+      - "5001:5001"
+    depends_on:
+      - db
+    environment:
+      DATABASE_URI: mysql+pymysql://root:Haifa319*@host.docker.internal:3307/ecommerce_db
+    command: ["wait-for-it", "db:3306", "--", "python", "app.py"]
+
+  # inventory:
+  #   build:
+  #     context: ./inventory
+  #   ports:
+  #     - "5002:5002"
+  #   depends_on:
+  #     - db
+  #   environment:
+  #     DATABASE_URI: mysql+pymysql://root:Haifa319*@db:3306/ecommerce_db
+
+  # sales:
+  #   build:
+  #     context: ./sales
+  #   ports:
+  #     - "5003:5003"
+  #   depends_on:
+  #     - db
+  #   environment:
+  #     DATABASE_URI: mysql+pymysql://root:Haifa319*@db:3306/ecommerce_db
+
+  # reviews:
+  #   build:
+  #     context: ./reviews
+  #   ports:
+  #     - "5004:5004"
+  #   depends_on:
+  #     - db
+  #   environment:
+  #     DATABASE_URI: mysql+pymysql://root:Haifa319*@db:3306/ecommerce_db
+
+volumes:
+  db_data:
