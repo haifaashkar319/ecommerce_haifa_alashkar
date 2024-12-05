@@ -6,7 +6,7 @@ __pycache__/
 
 # Virtual environment
 venv/
-docs/build/_static
+docs
 mysql_backup
 
 # Database files
@@ -18,3 +18,5 @@ mysql_backup
 # System files
 .DS_Store
 Thumbs.db
+
+mysql_backup/
