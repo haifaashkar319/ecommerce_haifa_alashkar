@@ -86,41 +86,46 @@ class CustomerService:
     
     @staticmethod
     def update_customer(username, updates):
-        """
-        Updates a customer's information.
+        try:
+            print(f"DEBUG: Attempting to update customer {username} with updates: {updates}")
 
-        Args:
-            username (str): The username of the customer.
-            updates (dict): A dictionary of fields to update.
+            # Define all possible fields to update
+            fields = [
+                "full_name", "password", "age", "address",
+                "gender", "marital_status", "wallet_balance", "role"
+            ]
 
-        Returns:
-            bool: True if the update was successful, False otherwise.
-        """
-        # Define all possible fields with default values as None
-        fields = [
-            "full_name", "password", "age", "address",
-            "gender", "marital_status", "wallet_balance"
-        ]
-        # Ensure all fields are present in the updates dictionary
-        updates_with_defaults = {field: updates.get(field) for field in fields}
-        updates_with_defaults["username"] = username
+            # Construct the query dynamically with only valid fields
+            update_fields = {field: updates.get(field) for field in fields if field in updates}
+            if not update_fields:
+                print(f"DEBUG: No valid fields to update for username {username}.")
+                return False
 
-        query = text("""
-            UPDATE customers
-            SET full_name = COALESCE(:full_name, full_name),
-                password = COALESCE(:password, password),
-                age = COALESCE(:age, age),
-                address = COALESCE(:address, address),
-                gender = COALESCE(:gender, gender),
-                marital_status = COALESCE(:marital_status, marital_status),
-                wallet_balance = COALESCE(:wallet_balance, wallet_balance),
-                role = COALESCE(:role, role)
-            WHERE username = :username
-        """)
-        result = db.session.execute(query, updates_with_defaults)
-        db.session.commit()
-        return result.rowcount > 0
-        
+            update_fields["username"] = username
+
+            query = text("""
+                UPDATE customers
+                SET
+                    full_name = COALESCE(:full_name, full_name),
+                    password = COALESCE(:password, password),
+                    age = COALESCE(:age, age),
+                    address = COALESCE(:address, address),
+                    gender = COALESCE(:gender, gender),
+                    marital_status = COALESCE(:marital_status, marital_status),
+                    wallet_balance = COALESCE(:wallet_balance, wallet_balance),
+                    role = COALESCE(:role, role)
+                WHERE username = :username
+            """)
+            result = db.session.execute(query, update_fields)
+            db.session.commit()
+
+            print(f"DEBUG: Update query affected {result.rowcount} rows.")
+            return result.rowcount > 0
+        except Exception as e:
+            print(f"DEBUG: Error in update_customer: {e}")
+            db.session.rollback()
+            return False
+    
     @staticmethod
     def delete_customer(username):
         """
@@ -164,30 +169,37 @@ class CustomerService:
     def charge_wallet(username, amount):
         """
         Charges a specified amount to a customer's wallet.
+
+        Args:
+            username (str): The username of the customer.
+            amount (float): The amount to add to the wallet.
+
+        Returns:
+            bool: True if successful, False if the customer is not found or other errors occur.
         """
         try:
-            # Log the wallet balance before update
+            # Log pre-update balance
             pre_query = text("SELECT wallet_balance FROM customers WHERE username = :username")
             pre_result = db.session.execute(pre_query, {"username": username}).mappings().fetchone()
-            print(f"DEBUG: Pre-update wallet balance for {username}: {pre_result['wallet_balance'] if pre_result else 'Customer not found'}")
+            if not pre_result:
+                print(f"DEBUG: Customer {username} not found.")
+                return False
 
-            # Perform the update
+            print(f"DEBUG: Pre-update wallet balance for {username}: {pre_result['wallet_balance']}")
+
+            # Update wallet balance
             query = text("""
                 UPDATE customers
                 SET wallet_balance = wallet_balance + :amount
                 WHERE username = :username
             """)
             result = db.session.execute(query, {"amount": amount, "username": username})
-
-            # Log the result of the update query
-            print(f"DEBUG: Update query result rowcount for {username}: {result.rowcount}")
-
             db.session.commit()
 
-            # Log the wallet balance after update
+            # Log post-update balance
             post_query = text("SELECT wallet_balance FROM customers WHERE username = :username")
             post_result = db.session.execute(post_query, {"username": username}).mappings().fetchone()
-            print(f"DEBUG: Post-update wallet balance for {username}: {post_result['wallet_balance'] if post_result else 'Customer not found'}")
+            print(f"DEBUG: Post-update wallet balance for {username}: {post_result['wallet_balance']}")
 
             return result.rowcount > 0
         except Exception as e:
@@ -200,18 +212,66 @@ class CustomerService:
     def deduct_wallet(username, amount):
         """
         Deducts funds from a customer's wallet if sufficient balance exists.
+
+        Args:
+            username (str): The username of the customer.
+            amount (float): The amount to deduct.
+
+        Returns:
+            bool: True if successful, False if the customer doesn't exist or has insufficient funds.
         """
         try:
+            # Log pre-update balance
+            pre_query = text("SELECT wallet_balance FROM customers WHERE username = :username")
+            pre_result = db.session.execute(pre_query, {"username": username}).mappings().fetchone()
+            if not pre_result:
+                print(f"DEBUG: Customer {username} not found.")
+                return False
+
+            print(f"DEBUG: Pre-update wallet balance for {username}: {pre_result['wallet_balance']}")
+
+            # Ensure sufficient balance before deducting
+            if pre_result['wallet_balance'] < amount:
+                print(f"DEBUG: Insufficient funds for {username}. Cannot deduct {amount} from balance {pre_result['wallet_balance']}.")
+                return False
+
+            # Update wallet balance
             query = text("""
                 UPDATE customers
                 SET wallet_balance = wallet_balance - :amount
-                WHERE username = :username AND wallet_balance >= :amount
+                WHERE username = :username
             """)
             result = db.session.execute(query, {"amount": amount, "username": username})
             db.session.commit()
+
+            # Log post-update balance
+            post_query = text("SELECT wallet_balance FROM customers WHERE username = :username")
+            post_result = db.session.execute(post_query, {"username": username}).mappings().fetchone()
+            print(f"DEBUG: Post-update wallet balance for {username}: {post_result['wallet_balance']}")
+
             return result.rowcount > 0
         except Exception as e:
-            print(f"Error in deduct_wallet: {e}")
+            print(f"Error in charge_wallet: {e}")
             db.session.rollback()
             return False
-    
+
+    @staticmethod
+    def delete_customer(username):
+        """
+        Deletes a customer from the database.
+
+        Args:
+            username (str): The username of the customer to delete.
+
+        Returns:
+            bool: True if the deletion was successful, False otherwise.
+        """
+        try:
+            query = text("DELETE FROM customers WHERE username = :username")
+            result = db.session.execute(query, {"username": username})
+            db.session.commit()
+            return result.rowcount > 0
+        except Exception as e:
+            print(f"Error in delete_customer: {e}")
+            db.session.rollback()
+            return False

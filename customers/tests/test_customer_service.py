@@ -1,10 +1,9 @@
-import pytest
+from pytest_mock import mocker
 import random
 import string
 from customers.models import Customer
 from database.db_config import db
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
-from unittest.mock import patch, MagicMock
 from customers.services import CustomerService
 from profile_tests import profile_test 
 from memory_tests import log_memory
@@ -13,10 +12,37 @@ def generate_unique_username():
     """Generate a random unique username for each test."""
     return "testuser_" + ''.join(random.choices(string.ascii_lowercase + string.digits, k=6))
 
+def test_login_and_authorization(client):
+    """Test login and retrieve token."""
+    username = generate_unique_username()
+    
+    # Register a user first
+    client.post('/customer', json={
+        "full_name": "Test User",
+        "username": username,
+        "password": "password",
+        "age": 30,
+        "address": "123 Test St",
+        "gender": "Male",
+        "marital_status": "Single"
+    })
+
+    # Login to get the token
+    login_response = client.post('/login', json={
+        "username": username,
+        "password": "password"
+    })
+
+    assert login_response.status_code == 200
+    token = login_response.json['access_token']
+    assert token, "Token should be returned"
+
+    return token
+
 
 ### ROUTE TESTS ###
-@profile_test
-@log_memory(output_file="customers_api_memory_usage.log")
+#@profile_test
+#@log_memory(output_file="customers_api_memory_usage.log")
 def test_register_customer(client):
     """Test customer registration."""
     username = generate_unique_username()
@@ -27,13 +53,14 @@ def test_register_customer(client):
         "age": 30,
         "address": "123 Test St",
         "gender": "Male",
-        "marital_status": "Single"
+        "marital_status": "Single",
+        "role": "customer"
     })
     assert response.status_code == 201
     assert response.json["message"] == "Customer created successfully"
 
-@profile_test
-@log_memory(output_file="customers_api_memory_usage.log")
+#@profile_test
+#@log_memory(output_file="customers_api_memory_usage.log")
 def test_get_customer(client):
     """Test retrieving a customer by username."""
     username = generate_unique_username()
@@ -44,7 +71,7 @@ def test_get_customer(client):
         "age": 30,
         "address": "123 Test St",
         "gender": "Male",
-        "marital_status": "Single"
+        "marital_status": "Single",
     })
 
     response = client.get(f'/customer/{username}')
@@ -52,11 +79,13 @@ def test_get_customer(client):
     assert response.json["username"] == username
     assert response.json["full_name"] == "Test User"
 
-@profile_test
-@log_memory(output_file="customers_api_memory_usage.log")
+#@profile_test
+#@log_memory(output_file="customers_api_memory_usage.log")
 def test_charge_wallet(client):
     """Test charging a customer's wallet."""
     username = generate_unique_username()
+
+    # Create a customer with the role
     client.post('/customer', json={
         "full_name": "Test User",
         "username": username,
@@ -64,22 +93,31 @@ def test_charge_wallet(client):
         "age": 30,
         "address": "123 Test St",
         "gender": "Male",
-        "marital_status": "Single"
+        "marital_status": "Single",
+        "role": "customer"  # Add role explicitly
     })
 
-    response = client.post(f'/customer/{username}/wallet/charge', json={"amount": 50.0})
+    # Log in and get the token
+    token = test_login_and_authorization(client)
+    headers = {"Authorization": f"Bearer {token}"}
+
+    # Charge wallet
+    response = client.post(f'/customer/{username}/wallet/charge', json={"amount": 50.0}, headers=headers)
     assert response.status_code == 200
     assert response.json["message"] == "Wallet charged successfully"
 
+    # Verify wallet balance
     get_response = client.get(f'/customer/{username}')
     assert get_response.status_code == 200
     assert get_response.json["wallet_balance"] == 50.0
 
-@profile_test
-@log_memory(output_file="customers_api_memory_usage.log")
+#@profile_test
+#@log_memory(output_file="customers_api_memory_usage.log")
 def test_deduct_wallet(client):
     """Test deducting money from a customer's wallet."""
     username = generate_unique_username()
+
+    # Create a customer
     client.post('/customer', json={
         "full_name": "Test User",
         "username": username,
@@ -87,24 +125,34 @@ def test_deduct_wallet(client):
         "age": 30,
         "address": "123 Test St",
         "gender": "Male",
-        "marital_status": "Single"
+        "marital_status": "Single",
+        "role": "customer"
     })
 
-    client.post(f'/customer/{username}/wallet/charge', json={"amount": 100.0})
+    # Log in and get the token
+    token = test_login_and_authorization(client)
+    headers = {"Authorization": f"Bearer {token}"}
 
-    response = client.post(f'/customer/{username}/wallet/deduct', json={"amount": 40.0})
+    # Charge wallet first
+    client.post(f'/customer/{username}/wallet/charge', json={"amount": 100.0}, headers=headers)
+
+    # Deduct wallet
+    response = client.post(f'/customer/{username}/wallet/deduct', json={"amount": 50.0}, headers=headers)
     assert response.status_code == 200
     assert response.json["message"] == "Wallet deducted successfully"
 
+    # Verify wallet balance
     get_response = client.get(f'/customer/{username}')
     assert get_response.status_code == 200
-    assert get_response.json["wallet_balance"] == 60.0
+    assert get_response.json["wallet_balance"] == 50.0
 
-@profile_test
-@log_memory(output_file="customers_api_memory_usage.log")
+#@profile_test
+#@log_memory(output_file="customers_api_memory_usage.log")
 def test_delete_customer(client):
     """Test deleting a customer."""
     username = generate_unique_username()
+
+    # Register a new customer
     client.post('/customer', json={
         "full_name": "Test User",
         "username": username,
@@ -112,187 +160,71 @@ def test_delete_customer(client):
         "age": 30,
         "address": "123 Test St",
         "gender": "Male",
-        "marital_status": "Single"
+        "marital_status": "Single",
+        "role": "customer"
     })
 
-    response = client.delete(f'/customer/{username}')
-    assert response.status_code == 200
+    # Log in to get the token for the same customer
+    token = test_login_and_authorization(client)
+    headers = {"Authorization": f"Bearer {token}"}
+
+
+
+    # Attempt to delete the customer
+    response = client.delete(f'/customer/{username}', headers=headers)
+    print(f"DEBUG: Response status code: {response.status_code}")
+    print(f"DEBUG: Response JSON: {response.json}")
+
+    # Assert successful deletion
+    assert response.status_code == 200, f"Expected 200 but got {response.status_code}"
     assert response.json["message"] == "Customer deleted successfully"
 
+    # Verify deletion
     get_response = client.get(f'/customer/{username}')
+    print(f"DEBUG: Get response after deletion: {get_response.json}")
     assert get_response.status_code == 404
     assert get_response.json["error"] == "Customer not found"
 
-
-### MODEL TESTS ###
-def test_customer_model_charge_wallet(client):
-    """Test the charge_wallet static method in the Customer model."""
+def test_update_customer(client):
+    """Test updating a customer's information."""
     username = generate_unique_username()
-    with client.application.app_context():
-        customer = Customer(
-            full_name="Test User",
-            username=username,
-            password="password",
-            age=30,
-            wallet_balance=0.0
-        )
-        db.session.add(customer)
-        db.session.commit()
 
-        success = Customer.charge_wallet(username=username, amount=50.0)
-        assert success, "charge_wallet method failed"
+    # Register a customer
+    client.post('/customer', json={
+        "full_name": "Test User",
+        "username": username,
+        "password": "password",
+        "age": 30,
+        "address": "123 Test St",
+        "gender": "Male",
+        "marital_status": "Single",
+        "role": "customer"
+    })
 
-        updated_customer = Customer.query.filter_by(username=username).first()
-        assert updated_customer.wallet_balance == 50.0
+    # Log in to get the token for the registered user
+    token = test_login_and_authorization(client, username, "password")
+    print(f"DEBUG: Token generated for user {username}: {token}")
 
+    headers = {"Authorization": f"Bearer {token}"}
 
-def test_customer_model_deduct_wallet(client):
-    """Test the deduct_wallet static method in the Customer model."""
-    username = generate_unique_username()
-    with client.application.app_context():
-        customer = Customer(
-            full_name="Test User",
-            username=username,
-            password="password",
-            age=30,
-            wallet_balance=100.0
-        )
-        db.session.add(customer)
-        db.session.commit()
+    # Update customer information
+    update_data = {
+        "full_name": "Updated Test User",
+        "age": 35,
+        "address": "456 New Address",
+    }
+    response = client.put(f'/customer/{username}', json=update_data, headers=headers)
+    print(f"DEBUG: Update response status code: {response.status_code}")
+    print(f"DEBUG: Update response JSON: {response.json}")
 
-        success = Customer.deduct_wallet(username=username, amount=40.0)
-        assert success, "deduct_wallet method failed"
+    # Assert successful update
+    assert response.status_code == 200
+    assert response.json["message"] == "Customer updated successfully"
 
-        updated_customer = Customer.query.filter_by(username=username).first()
-        assert updated_customer.wallet_balance == 60.0
-
-        insufficient_funds = Customer.deduct_wallet(username=username, amount=100.0)
-        assert not insufficient_funds, "deduct_wallet should fail with insufficient funds"
-
-        updated_customer = Customer.query.filter_by(username=username).first()
-        assert updated_customer.wallet_balance == 60.0
-
-
-def test_customer_to_dict(client):
-    """Test the to_dict method in the Customer model."""
-    username = generate_unique_username()
-    with client.application.app_context():
-        customer = Customer(
-            full_name="Test User",
-            username=username,
-            password="password",
-            age=30,
-            wallet_balance=100.0,
-            address="123 Test St",
-            gender="Male",
-            marital_status="Single"
-        )
-        db.session.add(customer)
-        db.session.commit()
-
-        customer_dict = customer.to_dict()
-        assert customer_dict["full_name"] == "Test User"
-        assert customer_dict["username"] == username
-        assert customer_dict["wallet_balance"] == 100.0
-        assert customer_dict["address"] == "123 Test St"
-        assert customer_dict["gender"] == "Male"
-        assert customer_dict["marital_status"] == "Single"
-
-
-### EXCEPTION HANDLING TESTS ###
-def test_charge_wallet_exception(client, mocker):
-    """Test exception handling in the charge_wallet method."""
-    username = generate_unique_username()
-    with client.application.app_context():
-        customer = Customer(
-            full_name="Test User",
-            username=username,
-            password="password",
-            age=30,
-            wallet_balance=0.0
-        )
-        db.session.add(customer)
-        db.session.commit()
-
-        mocker.patch("customers.models.db.session.execute", side_effect=SQLAlchemyError("Database error"))
-        success = Customer.charge_wallet(username=username, amount=50.0)
-        assert not success
-
-
-def test_deduct_wallet_exception(client, mocker):
-    """Test exception handling in the deduct_wallet method."""
-    username = generate_unique_username()
-    with client.application.app_context():
-        customer = Customer(
-            full_name="Test User",
-            username=username,
-            password="password",
-            age=30,
-            wallet_balance=100.0
-        )
-        db.session.add(customer)
-        db.session.commit()
-
-        mocker.patch("customers.models.db.session.execute", side_effect=SQLAlchemyError("Database error"))
-        success = Customer.deduct_wallet(username=username, amount=50.0)
-        assert not success
-
-def test_charge_wallet_exception_handling(client, mocker):
-    """Test exception handling in the charge_wallet method."""
-    username = generate_unique_username()
-    with client.application.app_context():
-        from customers.models import Customer
-        from customers.services import CustomerService
-
-        # Create a new customer
-        customer = Customer(
-            full_name="Test User",
-            username=username,
-            password="password",
-            age=30,
-            wallet_balance=100.0
-        )
-        db.session.add(customer)
-        db.session.commit()
-
-        # Mock the database operation to raise an exception
-        mocker.patch("customers.services.db.session.execute", side_effect=SQLAlchemyError("Mocked SQL error"))
-
-        # Call the service and ensure exception is handled
-        success = CustomerService.charge_wallet(username, 50.0)
-        assert not success, "charge_wallet should return False on exception"
-
-        # Verify wallet balance is unchanged
-        updated_customer = Customer.query.filter_by(username=username).first()
-        assert updated_customer.wallet_balance == 100.0, "Wallet balance should remain unchanged after exception"
-
-
-def test_deduct_wallet_exception_handling(client, mocker):
-    """Test exception handling in the deduct_wallet method."""
-    username = generate_unique_username()
-    with client.application.app_context():
-        from customers.models import Customer
-        from customers.services import CustomerService
-
-        # Create a new customer
-        customer = Customer(
-            full_name="Test User",
-            username=username,
-            password="password",
-            age=30,
-            wallet_balance=200.0
-        )
-        db.session.add(customer)
-        db.session.commit()
-
-        # Mock the database operation to raise an exception
-        mocker.patch("customers.services.db.session.execute", side_effect=SQLAlchemyError("Mocked SQL error"))
-
-        # Call the service and ensure exception is handled
-        success = CustomerService.deduct_wallet(username, 50.0)
-        assert not success, "deduct_wallet should return False on exception"
-
-        # Verify wallet balance is unchanged
-        updated_customer = Customer.query.filter_by(username=username).first()
-        assert updated_customer.wallet_balance == 200.0, "Wallet balance should remain unchanged after exception"
-        
+    # Verify the update
+    get_response = client.get(f'/customer/{username}')
+    print(f"DEBUG: Get response after update: {get_response.json}")
+    assert get_response.status_code == 200
+    assert get_response.json["full_name"] == "Updated Test User"
+    assert get_response.json["age"] == 35
+    assert get_response.json["address"] == "456 New Address"

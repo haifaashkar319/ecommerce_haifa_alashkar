@@ -18,8 +18,10 @@ def decode_token(token):
     """
     Decodes a JWT token and validates its expiration.
     """
-    return jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
-
+    print("fet")
+    payload = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
+    print ("zefet" , payload)
+    return payload["sub"]  # Return only the 'sub' field (user ID)
 def create_token(user_id):
     """
     Creates a JWT token for a given user ID.
