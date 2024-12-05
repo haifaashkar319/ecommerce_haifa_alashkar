@@ -6,7 +6,7 @@ __pycache__/
 
 # Virtual environment
 venv/
-docs
+docs/
 mysql_backup
 
 # Database files
