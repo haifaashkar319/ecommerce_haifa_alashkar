@@ -1,85 +1,107 @@
-from sqlalchemy.exc import SQLAlchemyError
-from inventory.models import Goods
 from database.db_config import db
+from inventory.models import Goods
+from customers.models import Customer
+from sales.models import Sale, PurchaseHistory
 
-class InventoryService:
+class SalesService:
     """
-    Service layer for managing inventory operations.
+    Service class for handling sales-related operations.
+
+    This class provides methods for:
+    - Displaying available goods.
+    - Retrieving details of a specific good.
+    - Processing a sale by validating customer and stock availability.
     """
 
     @staticmethod
-    def add_goods(name, category, price_per_item, description, count_in_stock):
+    def display_goods():
         """
-        Add new goods to the inventory.
+        Fetches all available goods with stock greater than zero.
+
+        Returns:
+            list: A list of dictionaries containing:
+                - `name` (str): The name of the good.
+                - `price` (float): The price per item of the good.
         """
-        goods = Goods(
-            name=name,
-            category=category,
-            price_per_item=price_per_item,
-            description=description,
-            count_in_stock=count_in_stock
+        goods = Goods.query.filter(Goods.count_in_stock > 0).all()
+        return [{"name": g.name, "price": g.price_per_item} for g in goods]
+
+    @staticmethod
+    def get_good_details(good_id):
+        """
+        Retrieves details for a specific good.
+
+        Args:
+            good_id (int): The ID of the good to retrieve.
+
+        Returns:
+            dict: A dictionary containing the details of the good.
+
+        Raises:
+            ValueError: If the good with the specified ID does not exist.
+        """
+        good = Goods.query.get(good_id)
+        if not good:
+            raise ValueError("Good not found")
+        return good.to_dict()
+
+    @staticmethod
+    def process_sale(customer_username, good_id, quantity):
+        """
+        Processes a sale transaction.
+
+        This method validates the customer, checks stock availability, and
+        deducts the customer's wallet balance and the stock quantity if all
+        conditions are met. It also records the sale and updates the purchase
+        history.
+
+        Args:
+            customer_username (str): The username of the customer making the purchase.
+            good_id (int): The ID of the good being purchased.
+            quantity (int): The quantity of the good to purchase.
+
+        Returns:
+            dict: A dictionary containing the details of the processed sale.
+
+        Raises:
+            ValueError: If:
+                - The customer does not exist.
+                - The good does not exist or has insufficient stock.
+                - The customer's wallet balance is insufficient.
+        """
+        # Fetch the customer and good
+        customer = Customer.query.filter_by(username=customer_username).first()
+        good = Goods.query.get(good_id)
+
+        if not customer:
+            raise ValueError("Customer not found")
+        if not good or good.count_in_stock < quantity:
+            raise ValueError("Good not available or insufficient stock")
+        
+        total_price = good.price_per_item * quantity
+        if customer.wallet_balance < total_price:
+            raise ValueError("Insufficient wallet balance")
+
+        # Deduct stock and wallet balance
+        good.count_in_stock -= quantity
+        customer.wallet_balance -= total_price
+
+        # Record the sale
+        sale = Sale(
+            good_id=good_id,
+            customer_username=customer_username,
+            quantity=quantity,
+            total_price=total_price
         )
-        db.session.add(goods)
-        try:
-            db.session.commit()
-            return goods.to_dict()
-        except SQLAlchemyError as e:
-            db.session.rollback()
-            raise ValueError(f"Failed to add goods: {e}")
+        db.session.add(sale)
 
-    @staticmethod
-    def update_goods(goods_id, updates):
-        """
-        Update fields of a specific goods item.
-        """
-        goods = Goods.query.get(goods_id)
-        if not goods:
-            raise ValueError("Goods not found.")
+        # Record the purchase in history
+        history = PurchaseHistory(
+            customer_username=customer_username,
+            good_name=good.name,
+            total_price=total_price
+        )
+        db.session.add(history)
 
-        for key, value in updates.items():
-            if hasattr(goods, key):
-                setattr(goods, key, value)
-
-        try:
-            db.session.commit()
-            return goods.to_dict()
-        except SQLAlchemyError as e:
-            db.session.rollback()
-            raise ValueError(f"Failed to update goods: {e}")
-
-    @staticmethod
-    def deduct_goods(goods_id, quantity):
-        """
-        Deduct items from inventory.
-        """
-        goods = Goods.query.get(goods_id)
-        if not goods:
-            raise ValueError("Goods not found.")
-
-        try:
-            goods.deduct_stock(quantity)
-            db.session.commit()
-            return goods.to_dict()
-        except ValueError as e:
-            raise ValueError(f"Error deducting goods: {e}")
-        except SQLAlchemyError as e:
-            db.session.rollback()
-            raise ValueError(f"Failed to deduct goods: {e}")
-
-    @staticmethod
-    def get_goods_by_id(goods_id):
-        """
-        Retrieve goods by ID.
-        """
-        goods = Goods.query.get(goods_id)
-        if not goods:
-            raise ValueError("Goods not found.")
-        return goods.to_dict()
-
-    @staticmethod
-    def get_all_goods():
-        """
-        Retrieve all goods from inventory.
-        """
-        goods_list = Goods.query.all()
-        return [goods.to_dict() for goods in goods_list]
+        db.session.commit()
+        return sale.to_dict()

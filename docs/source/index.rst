@@ -12,4 +12,3 @@ Modules
    customers
    inventory
    sales
-   reviews
