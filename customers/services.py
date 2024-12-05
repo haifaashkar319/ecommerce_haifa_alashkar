@@ -1,22 +1,42 @@
 from sqlalchemy.sql import text  
 from database.db_config import db
 from customers.models import Customer
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
+from utils import SECRET_KEY, create_token, extract_auth_token, decode_token, save_token
+
 
 class CustomerService:
+    @staticmethod
+    def login_customer(username, password):
+        """
+        Verifies customer credentials and generates a token if valid.
+        
+        Args:
+            username (str): The customer's username.
+            password (str): The customer's password.
+            
+        Returns:
+            dict: A dictionary with either the token or an error message.
+        """
+        try:
+            customer = Customer.query.filter_by(username=username).first()
+            if not customer or customer.password != password:
+                return {"error": "Invalid username or password"}
+            
+            # Generate JWT token
+            token = create_token(customer.id)
+            return {"access_token": token}
+        
+        except SQLAlchemyError as e:
+            return {"error": f"Database error: {str(e)}"}
     @staticmethod
     def save_to_db(customer):
         """
         Saves a customer object to the database.
-
-        Args:
-            customer (Customer): The customer object to save.
-
-        Returns:
-            None
         """
         query = text("""
-            INSERT INTO customers (full_name, username, password, age, address, gender, marital_status, wallet_balance)
-            VALUES (:full_name, :username, :password, :age, :address, :gender, :marital_status, :wallet_balance)
+            INSERT INTO customers (full_name, username, password, age, address, gender, marital_status, wallet_balance, role)
+            VALUES (:full_name, :username, :password, :age, :address, :gender, :marital_status, :wallet_balance, :role)
         """)
         db.session.execute(
             query,
@@ -28,7 +48,8 @@ class CustomerService:
                 "address": customer.address,
                 "gender": customer.gender,
                 "marital_status": customer.marital_status,
-                "wallet_balance": customer.wallet_balance or 0.0,  # Ensure 0.0 if None
+                "wallet_balance": customer.wallet_balance or 0.0,
+                "role": customer.role or "customer",  # Default role
             },
         )
         db.session.commit()
@@ -60,6 +81,7 @@ class CustomerService:
             gender=result["gender"],
             marital_status=result["marital_status"],
             wallet_balance=result["wallet_balance"] or 0.0,
+            role=result["role"]
         )
     
     @staticmethod
@@ -91,7 +113,8 @@ class CustomerService:
                 address = COALESCE(:address, address),
                 gender = COALESCE(:gender, gender),
                 marital_status = COALESCE(:marital_status, marital_status),
-                wallet_balance = COALESCE(:wallet_balance, wallet_balance)
+                wallet_balance = COALESCE(:wallet_balance, wallet_balance),
+                role = COALESCE(:role, role)
             WHERE username = :username
         """)
         result = db.session.execute(query, updates_with_defaults)
@@ -133,7 +156,8 @@ class CustomerService:
             address=result["address"],
             gender=result["gender"],
             marital_status=result["marital_status"],
-            wallet_balance=result["wallet_balance"]
+            wallet_balance=result["wallet_balance"],
+            role=result["role"]
         ).to_dict() for result in results]
         
     @staticmethod

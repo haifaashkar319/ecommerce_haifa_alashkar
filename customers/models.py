@@ -28,25 +28,8 @@ class Customer(db.Model):
     gender = db.Column(db.String(10), nullable=True)
     marital_status = db.Column(db.String(20), nullable=True)
     wallet_balance = db.Column(db.Float, default=0.0)
+    role = db.Column(db.String(20), default="customer", nullable=False)  # New field
 
-    @staticmethod
-    def charge_wallet(username, amount):
-        """
-        Charges a specified amount to a customer's wallet.
-        """
-        try:
-            query = text("""
-                UPDATE customers
-                SET wallet_balance = wallet_balance + :amount
-                WHERE username = :username
-            """)
-            result = db.session.execute(query, {"amount": amount, "username": username})
-            db.session.commit()
-            return result.rowcount > 0
-        except Exception as e:
-            print(f"Error in charge_wallet: {e}")
-            db.session.rollback()
-            return False
 
     @staticmethod
     def deduct_wallet(username, amount):
@@ -84,4 +67,5 @@ class Customer(db.Model):
             "gender": self.gender,
             "marital_status": self.marital_status,
             "wallet_balance": self.wallet_balance,
+            "role": self.role,
         }

@@ -30,21 +30,6 @@ customers_blueprint = Blueprint('customers', __name__)
 
 @customers_blueprint.route('/customer', methods=['POST'])
 def create_customer():
-    """
-    Registers a new customer.
-
-    Expects a JSON payload with:
-    - full_name (str): The full name of the customer.
-    - username (str): Unique username for the customer.
-    - password (str): Password for the customer.
-    - age (int): Age of the customer.
-    - address (str, optional): Address of the customer.
-    - gender (str, optional): Gender of the customer.
-    - marital_status (str, optional): Marital status of the customer.
-
-    Returns:
-        Response (JSON): A success message with a 201 status code.
-    """
     data = request.json
     customer = Customer(
         full_name=data['full_name'],
@@ -54,30 +39,35 @@ def create_customer():
         address=data.get('address'),
         gender=data.get('gender'),
         marital_status=data.get('marital_status'),
+        role=data.get('role', 'customer'),  # Default to 'customer'
     )
     CustomerService.save_to_db(customer)
     return jsonify({"message": "Customer created successfully"}), 201
 
+from customers.services import CustomerService
+
 @customers_blueprint.route('/login', methods=['POST'])
 def login():
+    """
+    API for customer login.
+    
+    Expects JSON payload:
+    - username (str)
+    - password (str)
+    
+    Returns:
+        JSON response with access token or error.
+    """
     data = request.json
-    username = data.get("username")
-    password = data.get("password")
+    if not data or "username" not in data or "password" not in data:
+        return jsonify({"error": "Username and password are required"}), 400
 
-    # Verify user credentials
-    customer = Customer.query.filter_by(username=username).first()
-    if not customer or customer.password != password:
-        return jsonify({"error": "Invalid username or password"}), 401
-
-    # Generate JWT
-    token = create_token(customer.id)
-    print(f"DEBUG: Generated token for customer ID {customer.id}: {token}")
-
-    # Save token
-    save_token("Created Token", token)
-
-    return jsonify({"access_token": token}), 200
-
+    # Call the login service
+    result = CustomerService.login_customer(data["username"], data["password"])
+    
+    if "error" in result:
+        return jsonify(result), 401  # Unauthorized
+    return jsonify(result), 200  # Success
 
 @customers_blueprint.route('/customer/<username>', methods=['PUT'])
 def update_customer(username):
@@ -97,6 +87,7 @@ def update_customer(username):
     - gender (str, optional)
     - marital_status (str, optional)
     - wallet_balance (float, optional)
+    - role 
 
     Returns:
         Response (JSON): A success message or error if the customer is not found.
@@ -183,8 +174,24 @@ def get_all_customers():
     Returns:
         Response (JSON): A list of all customer records.
     """
-    customers = CustomerService.get_all_customers()
-    return jsonify(customers)
+    header = extract_auth_token(request)
+    if header:
+        try:
+            user_id = decode_token(header)
+        except jwt.ExpiredSignatureError:
+            return jsonify({"error": "Token has expired"}), 403
+        except jwt.InvalidTokenError:
+            return jsonify({"error": "Unauthorized"}), 403
+
+        # Verify admin role
+        customer = Customer.query.get(user_id)
+        if not customer or customer.role != "admin":
+            return jsonify({"error": "Access forbidden: Admins only"}), 403
+
+        customers = CustomerService.get_all_customers()
+        return jsonify(customers)
+
+    return jsonify({"error": "Authorization header missing or malformed"}), 403
 
 @customers_blueprint.route('/customer/<username>/wallet/charge', methods=['POST'])
 def charge_wallet(username):
