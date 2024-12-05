@@ -1,27 +1,52 @@
-from datetime import datetime, timedelta
 import jwt
+import datetime  # Use Python's datetime module
+from flask import request, jsonify
 
-# Shared secret key
-SECRET_KEY = "your-secret-key"  # Replace with your secure key
+# Replace this with your actual secret key
+SECRET_KEY = "your_secret_key"
 
-# Save token to file
-def save_token(label, token):
-    with open("saved_tokens.txt", "a") as file:
-        file.write(f"{label}: {token}\n")
-
-# Extract Authorization token
-def extract_auth_token(authenticated_request):
-    auth_header = authenticated_request.headers.get("Authorization")
-    if auth_header:
-        return auth_header.split(" ")[1]  # Bearer <token>
+def extract_auth_token(req):
+    """
+    Extracts the Authorization token from the request headers.
+    """
+    auth_header = req.headers.get('Authorization')
+    if auth_header and auth_header.startswith("Bearer "):
+        return auth_header.split(" ")[1]
     return None
 
-# Decode JWT
 def decode_token(token):
-    try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
-        return payload["sub"]  # Return the subject (user ID)
-    except jwt.ExpiredSignatureError:
-        raise jwt.ExpiredSignatureError("Token has expired")
-    except jwt.InvalidTokenError as e:
-        raise jwt.InvalidTokenError(f"Invalid token: {str(e)}")
+    """
+    Decodes a JWT token and validates its expiration.
+    """
+    return jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
+
+def create_token(user_id):
+    """
+    Creates a JWT token for a given user ID.
+    """
+    payload = {
+        "sub": user_id,
+        "iat": datetime.datetime.utcnow(),  # Use datetime module
+        "exp": datetime.datetime.utcnow() + datetime.timedelta(hours=2)  # Use datetime module
+    }
+    return jwt.encode(payload, SECRET_KEY, algorithm="HS256")
+
+def save_token(event_name, token):
+    """
+    Saves a token for debugging or logging purposes.
+    """
+    print(f"{event_name}: {token}")
+
+def validate_json_payload(req, required_fields):
+    """
+    Validates that the JSON payload in a request contains all required fields.
+    """
+    data = req.get_json()
+    if not data:
+        return False, {"error": "Invalid JSON payload."}
+
+    missing_fields = [field for field in required_fields if field not in data]
+    if missing_fields:
+        return False, {"error": f"Missing required fields: {', '.join(missing_fields)}"}
+
+    return True, data

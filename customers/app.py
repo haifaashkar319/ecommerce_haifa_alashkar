@@ -1,9 +1,12 @@
+import sys
+import os
 from flask import Flask
 from sqlalchemy import inspect
 from database.db_config import init_db, db
 from customers.routes import customers_blueprint
 import sys
 import os
+
 
 # Add the current working directory to Python's module path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
