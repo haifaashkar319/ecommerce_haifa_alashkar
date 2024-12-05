@@ -15,17 +15,20 @@ def profile_test(func):
             profiler.disable()
 
             # Create the profiling folder if it doesn't exist
-            profiling_folder = "profiling_data"
+            profiling_folder = "profiling"
             os.makedirs(profiling_folder, exist_ok=True)
 
             # Save the .prof file in the folder
             file_name = os.path.join(profiling_folder, f"{func.__name__}.prof")
-            # Collect and print profiling stats
+            profiler.dump_stats(file_name)
+
+            # Optional: Print stats to the console for quick inspection
             s = io.StringIO()
             ps = pstats.Stats(profiler, stream=s).sort_stats(pstats.SortKey.TIME)
-            profiler.dump_stats(file_name)
+            ps.print_stats(10)  # Print top 10 results to the console
             print(f"Profiling data saved to {file_name}")
 
         return result
     return wrapper
-# use snakeviz <function_name>.prof to see the profiling
+
+# snakeviz profiling/<function_name>.prof
