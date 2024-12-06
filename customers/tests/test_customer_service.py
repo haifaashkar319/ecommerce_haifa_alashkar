@@ -147,3 +147,99 @@ def test_deduct_wallet(client):
     assert get_response.status_code == 200
     assert get_response.json["wallet_balance"] == 50.0
 
+def test_register_customer_invalid_data(client):
+    """Test customer registration with invalid data."""
+    # Missing required field 'username'
+    response = client.post('/customer', json={
+        "full_name": "Test User",
+        "password": "password",
+        "age": 30,
+        "address": "123 Test St",
+        "gender": "Male",
+        "marital_status": "Single"
+    })
+    assert response.status_code == 400
+    assert "Missing fields: username" in response.json["message"]
+
+    # Missing multiple fields
+    response = client.post('/customer', json={
+        "full_name": "Test User"
+    })
+    assert response.status_code == 400
+    assert "Missing fields: username, password, age, address, gender, marital_status" in response.json["message"]
+
+def test_charge_wallet_invalid_amount(client):
+    """Test charging the wallet with invalid amounts."""
+    username = generate_unique_username()
+
+    # Create a customer
+    client.post('/customer', json={
+        "full_name": "Test User",
+        "username": username,
+        "password": "password",
+        "age": 30,
+        "address": "123 Test St",
+        "gender": "Male",
+        "marital_status": "Single",
+        "role": "customer"
+    })
+
+    # Log in and get the token
+    token = test_login_and_authorization(client)
+    headers = {"Authorization": f"Bearer {token}"}
+
+    # Charge wallet with negative amount
+    response = client.post(f'/customer/{username}/wallet/charge', json={"amount": -50.0}, headers=headers)
+    assert response.status_code == 400
+    assert "Amount cannot be negative" in response.json["message"]
+
+def test_deduct_wallet_insufficient_balance(client):
+    """Test deducting wallet when balance is insufficient."""
+    username = generate_unique_username()
+
+    # Create a customer
+    client.post('/customer', json={
+        "full_name": "Test User",
+        "username": username,
+        "password": "password",
+        "age": 30,
+        "address": "123 Test St",
+        "gender": "Male",
+        "marital_status": "Single",
+        "role": "customer"
+    })
+
+    # Log in and get the token
+    token = test_login_and_authorization(client)
+    headers = {"Authorization": f"Bearer {token}"}
+
+    # Attempt to deduct without charging first
+    response = client.post(f'/customer/{username}/wallet/deduct', json={"amount": 50.0}, headers=headers)
+    assert response.status_code == 400
+    assert "Insufficient balance" in response.json["message"]
+
+def test_register_customer_xss(client):
+    """Test for XSS vulnerabilities during registration."""
+    username = "<script>alert('xss')</script>"
+    response = client.post('/customer', json={
+        "full_name": "Test User",
+        "username": username,
+        "password": "password",
+        "age": 30,
+        "address": "123 Test St",
+        "gender": "Male",
+        "marital_status": "Single",
+        "role": "customer"
+    })
+    assert response.status_code == 400  # Expecting rejection
+    assert "Invalid username" in response.json["message"]
+
+def test_login_sql_injection(client):
+    """Test for SQL injection vulnerabilities during login."""
+    malicious_username = "' OR '1'='1"
+    response = client.post('/login', json={
+        "username": malicious_username,
+        "password": "password"
+    })
+    assert response.status_code == 400  # Should not allow login
+    assert "Invalid credentials" in response.json["message"]

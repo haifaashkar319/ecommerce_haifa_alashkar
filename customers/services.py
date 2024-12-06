@@ -275,3 +275,11 @@ class CustomerService:
             print(f"Error in delete_customer: {e}")
             db.session.rollback()
             return False
+    def validate_customer_payload(payload):
+        required_fields = ['full_name', 'username', 'password', 'age', 'address', 'gender', 'marital_status']
+        missing_fields = [field for field in required_fields if field not in payload]
+
+        if missing_fields:
+            raise ValueError(f"Missing fields: {', '.join(missing_fields)}")
+
+

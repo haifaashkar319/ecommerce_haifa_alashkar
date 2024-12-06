@@ -11,6 +11,7 @@ Blueprint:
 Routes:
 -------
 - POST `/customer`: Create a new customer.
+- POST `/login`: Login a customer.
 - PUT `/customer/<username>`: Update an existing customer's information.
 - DELETE `/customer/<username>`: Delete a customer.
 - GET `/customer/<username>`: Fetch a customer's details.
@@ -30,70 +31,136 @@ customers_blueprint = Blueprint('customers', __name__)
 
 @customers_blueprint.route('/customer', methods=['POST'])
 def create_customer():
-    data = request.json
-    customer = Customer(
-        full_name=data['full_name'],
-        username=data['username'],
-        password=data['password'],
-        age=data['age'],
-        address=data.get('address'),
-        gender=data.get('gender'),
-        marital_status=data.get('marital_status'),
-        role=data.get('role', 'customer'),  # Default to 'customer'
-    )
-    CustomerService.save_to_db(customer)
-    return jsonify({"message": "Customer created successfully"}), 201
+    """
+    Create a new customer.
 
-from customers.services import CustomerService
+    **Endpoint**: `/customer`
+
+    **Method**: `POST`
+
+    **Request Body**:
+        - `full_name` (str): Full name of the customer (required).
+        - `username` (str): Unique username for the customer (required).
+        - `password` (str): Password for the customer (required).
+        - `age` (int): Age of the customer (required).
+        - `address` (str): Address of the customer (optional).
+        - `gender` (str): Gender of the customer (optional).
+        - `marital_status` (str): Marital status of the customer (optional).
+        - `role` (str): Role of the customer, defaults to "customer" (optional).
+
+    **Response**:
+        - `201 Created`: If the customer is created successfully.
+        - `400 Bad Request`: If validation fails or required fields are missing.
+        - `500 Internal Server Error`: If an unexpected error occurs.
+        """
+
+    try:
+        # Validate the payload first
+        data = request.json
+
+        # Input sanitization for malicious inputs
+        if '<' in data.get('username', '') or '>' in data.get('username', ''):
+            return {"message": "Invalid username"}, 400
+
+        CustomerService.validate_customer_payload(data)
+
+        # Proceed to create a customer object only after validation
+        customer = Customer(
+            full_name=data['full_name'],
+            username=data['username'],
+            password=data['password'],
+            age=data['age'],
+            address=data.get('address'),
+            gender=data.get('gender'),
+            marital_status=data.get('marital_status'),
+            role=data.get('role', 'customer'),  # Default to 'customer'
+        )
+
+        # Save to the database
+        CustomerService.save_to_db(customer)
+        return jsonify({"message": "Customer created successfully"}), 201
+
+    except ValueError as e:
+        # Validation error
+        return {"message": str(e)}, 400
+    except KeyError as e:
+        # Handle unexpected KeyErrors gracefully
+        return {"message": f"Missing required field: {str(e)}"}, 400
+    except Exception as e:
+        # Catch-all for unexpected errors
+        return {"message": "An error occurred. Please try again."}, 500
 
 @customers_blueprint.route('/login', methods=['POST'])
 def login():
     """
-    API for customer login.
-    
-    Expects JSON payload:
-    - username (str)
-    - password (str)
-    
-    Returns:
-        JSON response with access token or error.
-    """
-    data = request.json
-    if not data or "username" not in data or "password" not in data:
-        return jsonify({"error": "Username and password are required"}), 400
+    Login a customer.
 
-    # Call the login service
-    result = CustomerService.login_customer(data["username"], data["password"])
-    
-    if "error" in result:
-        return jsonify(result), 401  # Unauthorized
-    return jsonify(result), 200  # Success
+    **Endpoint**: `/login`
+
+    **Method**: `POST`
+
+    **Request Body**:
+        - `username` (str): Username of the customer (required).
+        - `password` (str): Password of the customer (required).
+
+    **Response**:
+        - `200 OK`: If login is successful, returns an access token.
+        - `400 Bad Request`: If the request payload is invalid.
+        - `401 Unauthorized`: If login fails due to incorrect credentials.
+        - `500 Internal Server Error`: If an unexpected error occurs.
+    """
+    try:
+        data = request.json
+
+        # Validate payload presence
+        if not data or "username" not in data or "password" not in data:
+            return jsonify({"error": "Username and password are required"}), 400
+
+        # Input sanitization for SQL injection prevention
+        if "'" in data["username"] or '"' in data["username"]:
+            return jsonify({"message": "Invalid credentials"}), 400
+
+        # Call the login service
+        result = CustomerService.login_customer(data["username"], data["password"])
+        
+        if "error" in result:
+            return jsonify(result), 401  # Unauthorized
+        return jsonify(result), 200  # Success
+
+    except Exception as e:
+        # Catch-all for unexpected errors
+        return {"message": "An error occurred. Please try again."}, 500
 
 @customers_blueprint.route('/customer/<username>', methods=['PUT'])
 def update_customer(username):
     """
-    Updates a customer's information.
+    Update an existing customer's information.
 
-    Args:
-        username (str): The username of the customer to update.
+    **Endpoint**: `/customer/<username>`
 
-    Requires an Authorization token in the header to identify the user.
+    **Method**: `PUT`
 
-    Expects a JSON payload with any of the following fields:
-    - full_name (str, optional)
-    - password (str, optional)
-    - age (int, optional)
-    - address (str, optional)
-    - gender (str, optional)
-    - marital_status (str, optional)
-    - wallet_balance (float, optional)
-    - role (str, optional)
+    **URL Parameters**:
+        - `username` (str): The username of the customer to update.
 
-    Returns:
-        Response (JSON): A success message or error if the customer is not found or unauthorized.
+    **Request Body**:
+        - Any of the following fields can be included:
+          - `full_name` (str): Full name of the customer (optional).
+          - `password` (str): Password of the customer (optional).
+          - `age` (int): Age of the customer (optional).
+          - `address` (str): Address of the customer (optional).
+          - `gender` (str): Gender of the customer (optional).
+          - `marital_status` (str): Marital status of the customer (optional).
+          - `wallet_balance` (float): Wallet balance of the customer (optional).
+          - `role` (str): Role of the customer (optional).
+
+    **Response**:
+        - `200 OK`: If the customer's information is updated successfully.
+        - `400 Bad Request`: If the request payload is invalid or the update fails.
+        - `403 Forbidden`: If the user is unauthorized to perform this action.
+        - `404 Not Found`: If the customer does not exist.
+        - `500 Internal Server Error`: If an unexpected error occurs.
     """
-    print("DEBUG: Entered update_customer route for username:", username)
-
     # Extract the token from the Authorization header
     header = extract_auth_token(request)
     if not header:
@@ -136,15 +203,20 @@ def update_customer(username):
 @customers_blueprint.route('/customer/<username>', methods=['DELETE'])
 def delete_customer(username):
     """
-    Deletes a customer by username.
+    Delete a customer by username.
 
-    Args:
-        username (str): The username of the customer to delete.
+    **Endpoint**: `/customer/<username>`
 
-    Requires an Authorization token in the header to identify the user.
+    **Method**: `DELETE`
 
-    Returns:
-        Response (JSON): A success message or error if the customer is not found.
+    **URL Parameters**:
+        - `username` (str): The username of the customer to delete.
+
+    **Response**:
+        - `200 OK`: If the customer is deleted successfully.
+        - `403 Forbidden`: If the user is unauthorized to perform this action.
+        - `404 Not Found`: If the customer does not exist.
+        - `500 Internal Server Error`: If an unexpected error occurs.
     """
     # Extract the token from the Authorization header
     header = extract_auth_token(request)
@@ -180,13 +252,18 @@ def delete_customer(username):
 @customers_blueprint.route('/customer/<username>', methods=['GET'])
 def get_customer(username):
     """
-    Fetches customer details by username.
+    Fetch customer details by username.
 
-    Args:
-        username (str): The username of the customer.
+    **Endpoint**: `/customer/<username>`
 
-    Returns:
-        Response (JSON): The customer's details or an error if not found.
+    **Method**: `GET`
+
+    **URL Parameters**:
+        - `username` (str): The username of the customer.
+
+    **Response**:
+        - `200 OK`: If the customer's details are retrieved successfully.
+        - `404 Not Found`: If the customer does not exist.
     """
     customer = CustomerService.get_customer_by_username(username)
     if not customer:
@@ -196,10 +273,16 @@ def get_customer(username):
 @customers_blueprint.route('/customers', methods=['GET'])
 def get_all_customers():
     """
-    Fetches all customers in the database.
+    Fetch all customers in the database.
 
-    Returns:
-        Response (JSON): A list of all customer records.
+    **Endpoint**: `/customers`
+
+    **Method**: `GET`
+
+    **Response**:
+        - `200 OK`: If the list of customers is retrieved successfully.
+        - `403 Forbidden`: If the user is unauthorized to perform this action.
+        - `500 Internal Server Error`: If an unexpected error occurs.
     """
     header = extract_auth_token(request)
     if header:
@@ -223,18 +306,24 @@ def get_all_customers():
 @customers_blueprint.route('/customer/<username>/wallet/charge', methods=['POST'])
 def charge_wallet(username):
     """
-    Charges an amount to a customer's wallet.
+    Charge an amount to a customer's wallet.
 
-    Args:
-        username (str): The username of the customer.
+    **Endpoint**: `/customer/<username>/wallet/charge`
 
-    Requires an Authorization token in the header to identify the user.
+    **Method**: `POST`
 
-    Expects a JSON payload with:
-    - amount (float): The amount to charge.
+    **URL Parameters**:
+        - `username` (str): The username of the customer.
 
-    Returns:
-        Response (JSON): A success message or error if the customer is not found.
+    **Request Body**:
+        - `amount` (float): The amount to charge (required, must be non-negative).
+
+    **Response**:
+        - `200 OK`: If the wallet is charged successfully.
+        - `400 Bad Request`: If the request payload is invalid or the amount is negative.
+        - `403 Forbidden`: If the user is unauthorized to perform this action.
+        - `404 Not Found`: If the customer does not exist.
+        - `500 Internal Server Error`: If an unexpected error occurs.
     """
     # Extract and validate token
     header = extract_auth_token(request)
@@ -257,6 +346,9 @@ def charge_wallet(username):
         data = request.json
         if not data or "amount" not in data:
             return jsonify({"error": "Amount is required"}), 400
+        
+        if data.get("amount") < 0:
+            return jsonify({"message": "Amount cannot be negative"}), 400
 
         success = CustomerService.charge_wallet(username, data['amount'])
         if not success:
@@ -267,6 +359,26 @@ def charge_wallet(username):
     return jsonify({"error": "Authorization header missing or malformed"}), 403
 @customers_blueprint.route('/customer/<username>/wallet/deduct', methods=['POST'])
 def deduct_wallet(username):
+    """
+    Deduct an amount from a customer's wallet.
+
+    **Endpoint**: `/customer/<username>/wallet/deduct`
+
+    **Method**: `POST`
+
+    **URL Parameters**:
+        - `username` (str): The username of the customer.
+
+    **Request Body**:
+        - `amount` (float): The amount to deduct (required, must not exceed wallet balance).
+
+    **Response**:
+        - `200 OK`: If the amount is deducted successfully.
+        - `400 Bad Request`: If the request payload is invalid or there is insufficient balance.
+        - `403 Forbidden`: If the user is unauthorized to perform this action.
+        - `404 Not Found`: If the customer does not exist.
+        - `500 Internal Server Error`: If an unexpected error occurs.
+    """
     header = extract_auth_token(request)
     if header:
         try:
@@ -288,6 +400,9 @@ def deduct_wallet(username):
         if not data or "amount" not in data:
             return jsonify({"error": "Amount is required"}), 400
 
+        if data.get("amount") > customer.wallet_balance:
+            return jsonify({"message": "Insufficient balance"}), 400
+
         success = CustomerService.deduct_wallet(username, data['amount'])
         if not success:
             return jsonify({"error": "Error updating wallet balance"}), 500
@@ -295,3 +410,4 @@ def deduct_wallet(username):
         return jsonify({"message": "Wallet deducted successfully"}), 200
 
     return jsonify({"error": "Authorization header missing or malformed"}), 403
+
