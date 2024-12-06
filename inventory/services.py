@@ -62,7 +62,7 @@ class InventoryService:
             raise ValueError("Goods not found.")
 
         if quantity > goods.count_in_stock:
-            raise ValueError("Quantity exceeds stock availability")
+            raise ValueError("Insufficient stock available")
 
         try:
             goods.deduct_stock(quantity)
