@@ -16,14 +16,11 @@ def extract_auth_token(req):
 
 def decode_token(token):
     try:
-        print(f"Raw Token: {token}")
         if token.startswith("Bearer "):
             token = token.split(" ", 1)[1]
-        print(f"Token after removing Bearer prefix: {token}")
 
         # Decode the token
         payload = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
-        print(f"Decoded Token Payload: {payload}")
         return payload["sub"]  # Assuming "sub" contains the user_id
     except jwt.ExpiredSignatureError:
         print("Token has expired")

@@ -82,9 +82,13 @@ class SalesService:
         # Calculate total price
         total_price = good.price_per_item * quantity
 
+        print(f"Customer Wallet in API: {customer.wallet_balance}, Required: {total_price}")
+
         # Check wallet balance
         if customer.wallet_balance < total_price:
+            print(f"Customer Wallet: {customer.wallet_balance}, Required: {total_price}")
             raise ValueError("Insufficient wallet balance")
+
 
         # Deduct stock and wallet balance
         good.count_in_stock -= quantity
