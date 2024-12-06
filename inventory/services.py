@@ -1,6 +1,11 @@
+from flask import jsonify
+import jwt
 from sqlalchemy.exc import SQLAlchemyError
+from customers.models import Customer
+from utils import decode_token
 from inventory.models import Goods
 from database.db_config import db
+
 
 class InventoryService:
     """
@@ -56,6 +61,9 @@ class InventoryService:
         if not goods:
             raise ValueError("Goods not found.")
 
+        if quantity > goods.count_in_stock:
+            raise ValueError("Quantity exceeds stock availability")
+
         try:
             goods.deduct_stock(quantity)
             db.session.commit()
@@ -83,3 +91,41 @@ class InventoryService:
         """
         goods_list = Goods.query.all()
         return [goods.to_dict() for goods in goods_list]
+    
+    @staticmethod
+    def require_admin_role(request):
+        print("Entering require_admin_role")
+        header = request.headers.get("Authorization")
+        print(f"Authorization Header: {header}")  # Debug log
+
+        if not header:
+            raise UnauthorizedAccess("Authorization header missing or malformed")
+
+        try:
+            user_id = decode_token(header)
+            print(f"Decoded User ID: {user_id}")
+        except jwt.ExpiredSignatureError:
+            raise UnauthorizedAccess("Token has expired")
+        except jwt.InvalidTokenError as e:
+            raise UnauthorizedAccess(f"Unauthorized: {e}")
+
+        user = Customer.query.get(user_id)
+        print(f"Fetched User: {user}")  # Debug log
+        if user:
+            print(f"User Role: {user.role}")
+        else:
+            print("No user found with this ID.")
+
+        if not user or user.role != "admin":
+            print("User is not authorized")
+            raise UnauthorizedAccess("Access forbidden: Admins only")
+
+        print("User is authorized")
+        return user
+
+
+class UnauthorizedAccess(Exception):
+    """Custom exception for unauthorized access."""
+    pass
+
+

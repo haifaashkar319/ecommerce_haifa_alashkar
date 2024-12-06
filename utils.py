@@ -15,13 +15,23 @@ def extract_auth_token(req):
     return None
 
 def decode_token(token):
-    """
-    Decodes a JWT token and validates its expiration.
-    """
-    print("fet")
-    payload = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
-    print ("zefet" , payload)
-    return payload["sub"]  # Return only the 'sub' field (user ID)
+    try:
+        print(f"Raw Token: {token}")
+        if token.startswith("Bearer "):
+            token = token.split(" ", 1)[1]
+        print(f"Token after removing Bearer prefix: {token}")
+
+        # Decode the token
+        payload = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
+        print(f"Decoded Token Payload: {payload}")
+        return payload["sub"]  # Assuming "sub" contains the user_id
+    except jwt.ExpiredSignatureError:
+        print("Token has expired")
+        raise
+    except jwt.InvalidTokenError as e:
+        print(f"Invalid token: {e}")
+        raise
+
 def create_token(user_id):
     """
     Creates a JWT token for a given user ID.

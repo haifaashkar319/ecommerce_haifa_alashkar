@@ -7,10 +7,15 @@ import sys
 import os
 
 # Add the current working directory to Python's module path
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 app = Flask(__name__)
+app.config.update({
+    'SQLALCHEMY_DATABASE_URI': 'mysql+pymysql://root:Haifa319*@localhost:3307/ecommerce_db',
+    'SQLALCHEMY_TRACK_MODIFICATIONS': False
+})
 init_db(app)
+
 
 # Register Blueprint
 app.register_blueprint(inventory_bp)
