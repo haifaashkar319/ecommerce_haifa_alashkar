@@ -10,7 +10,7 @@ import sys
 import os
 
 # Add the current working directory to Python's module path
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 # Register Blueprint
 app.register_blueprint(sales_bp)
@@ -22,8 +22,6 @@ if __name__ == "__main__":
         if 'sales' not in tables:
             print("Sales table not found. Creating tables...")
             db.create_all()
-        else:
-            print("Goods table already exists.")
         if 'purchase history' not in tables:
             print("Sales table not found. Creating tables...")
             db.create_all()

@@ -46,7 +46,7 @@ class SalesService:
         return good.to_dict()
 
     @staticmethod
-    def process_sale(customer_username, good_id, quantity):
+    def process_sale(customer_id, good_id, quantity):
         """
         Processes a sale transaction.
 
@@ -56,7 +56,7 @@ class SalesService:
         history.
 
         Args:
-            customer_username (str): The username of the customer making the purchase.
+            customer_id (int): The ID of the customer making the purchase.
             good_id (int): The ID of the good being purchased.
             quantity (int): The quantity of the good to purchase.
 
@@ -70,15 +70,19 @@ class SalesService:
                 - The customer's wallet balance is insufficient.
         """
         # Fetch the customer and good
-        customer = Customer.query.filter_by(username=customer_username).first()
+        customer = Customer.query.filter_by(id=customer_id).first()
         good = Goods.query.get(good_id)
 
+        # Validate customer and good
         if not customer:
             raise ValueError("Customer not found")
         if not good or good.count_in_stock < quantity:
             raise ValueError("Good not available or insufficient stock")
-        
+
+        # Calculate total price
         total_price = good.price_per_item * quantity
+
+        # Check wallet balance
         if customer.wallet_balance < total_price:
             raise ValueError("Insufficient wallet balance")
 
@@ -89,7 +93,7 @@ class SalesService:
         # Record the sale
         sale = Sale(
             good_id=good_id,
-            customer_username=customer_username,
+            customer_username=customer.username,  # Map customer_id to customer.username
             quantity=quantity,
             total_price=total_price
         )
@@ -97,11 +101,14 @@ class SalesService:
 
         # Record the purchase in history
         history = PurchaseHistory(
-            customer_username=customer_username,
+            customer_username=customer.username,  # Map customer_id to customer.username
             good_name=good.name,
             total_price=total_price
         )
         db.session.add(history)
 
+        # Commit changes to the database
         db.session.commit()
+
+        # Return sale details
         return sale.to_dict()
