@@ -3,7 +3,6 @@ from utils import SECRET_KEY, extract_auth_token, decode_token
 from customers.models import Customer
 from reviews.services import ReviewService
 from sqlalchemy.exc import SQLAlchemyError
-from flask_jwt_extended import  jwt_required, get_jwt_identity
 import jwt
 reviews_bp = Blueprint('reviews', __name__, url_prefix='/reviews')
 
@@ -249,7 +248,8 @@ def moderate_review(review_id):
         existing_user = Customer.query.get(user_id)
         if not existing_user:
             return jsonify({"error": "Unauthorized"}), 403
-
+        if existing_user.role != "admin":
+            return jsonify({"error": "Must be admin"})
         # Parse moderation details from request
         data = request.json
         try:
