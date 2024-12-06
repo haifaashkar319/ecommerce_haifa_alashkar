@@ -17,7 +17,7 @@ def generate_unique_item_name():
     return "item_" + ''.join(random.choices(string.ascii_lowercase + string.digits, k=6))
 
 @profile_test
-@log_memory(output_file="customers_api_memory_usage.log")
+@log_memory(output_file="inventory_api_memory_usage.log")
 def test_get_item(client):
     """Test retrieving a specific item by ID."""
     item_name = generate_unique_item_name()
@@ -43,7 +43,7 @@ def test_get_item(client):
     assert item["count_in_stock"] == 25
 
 @profile_test
-@log_memory(output_file="customers_api_memory_usage.log")
+@log_memory(output_file="inventory_api_memory_usage.log")
 def test_get_all_items(client):
     """Test retrieving all items in the inventory."""
     item_name1 = generate_unique_item_name()
@@ -77,7 +77,7 @@ def test_get_all_items(client):
     assert any(item["name"] == item_name2 for item in items)
 
 @profile_test
-@log_memory(output_file="customers_api_memory_usage.log")
+@log_memory(output_file="inventory_api_memory_usage.log")
 def test_get_item(client):
     """Test retrieving a specific item by ID."""
     item_name = generate_unique_item_name()
@@ -102,7 +102,7 @@ def test_get_item(client):
     assert item["count_in_stock"] == 25
 
 @profile_test
-@log_memory(output_file="customers_api_memory_usage.log")
+@log_memory(output_file="inventory_api_memory_usage.log")
 def test_update_item(client):
     """Test updating an item in the inventory."""
     item_name = generate_unique_item_name()
@@ -130,7 +130,7 @@ def test_update_item(client):
     assert updated_item["count_in_stock"] == 10
 
 @profile_test
-@log_memory(output_file="customers_api_memory_usage.log")
+@log_memory(output_file="inventory_api_memory_usage.log")
 def test_deduct_item(client):
     """Test deducting stock of an item."""
     item_name = generate_unique_item_name()
