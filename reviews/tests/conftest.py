@@ -1,25 +1,36 @@
 import os
 import sys
 import pytest
+import random
+import string
+from sqlalchemy.sql import text
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")))
 
 from flask import Flask
-from sales.routes import sales_bp
+from reviews.routes import reviews_bp
 from database.db_config import db
 from customers.models import Customer
 from inventory.models import Goods
 from utils import create_token
 
+def generate_unique_username():
+    """Generate a unique username for customers."""
+    return "testuser_" + ''.join(random.choices(string.ascii_lowercase + string.digits, k=6))
+
+def generate_unique_good_name():
+    """Generate a unique product name."""
+    return "testproduct_" + ''.join(random.choices(string.ascii_lowercase + string.digits, k=6))
+
 
 @pytest.fixture
 def client():
     """
-    Flask test client with a temporary SQLite database for testing sales.
+    Flask test client with a temporary SQLite database for testing reviews.
     """
     # Create a new app instance for tests
     app = Flask(__name__)
-    app.register_blueprint(sales_bp)
+    app.register_blueprint(reviews_bp)
 
     # Initialize the test database
     from database.db_config import init_db
@@ -28,54 +39,43 @@ def client():
     app.config['TESTING'] = True
 
     with app.app_context():
+        # Enable SQLite foreign keys
+        db.session.execute(text("PRAGMA foreign_keys=ON;"))
         db.create_all()
 
-        # Seed admin user
-        admin_user = Customer(
-            full_name="Admin User",
-            username="admin",
-            password="password",
-            age=30,
-            role="admin"
-        )
-        db.session.add(admin_user)
-
-        # Seed regular user
-        regular_user = Customer(
-            full_name="Regular User",
-            username="customer",
+        # Seed a customer
+        customer = Customer(
+            full_name="Default Test User",
+            username=generate_unique_username(),
             password="password",
             age=25,
-            role="customer"
+            address="123 Test St",
+            gender="Male",
+            marital_status="Single"
         )
-        db.session.add(regular_user)
+        db.session.add(customer)
 
-        # Seed inventory items
-        item = Goods(
-            name="Test Item",
+        # Seed a product
+        product = Goods(
+            name=generate_unique_good_name(),
             category="electronics",
-            price_per_item=100.0,
-            description="A test item",
+            price_per_item=50.0,
+            description="A default product for testing.",
             count_in_stock=10
         )
-        db.session.add(item)
-
+        db.session.add(product)
         db.session.commit()
 
-        # Generate tokens
-        admin_token = create_token(admin_user.id)
-        customer_token = create_token(regular_user.id)
+        # Generate token for the customer
+        customer_token = create_token(customer.id)
 
         # Helper function to add the Authorization header
         def add_auth_header(client_request):
             def wrapper(path, *args, **kwargs):
                 no_auth = kwargs.pop("no_auth", False)
-                is_admin = kwargs.pop("is_admin", False)
                 headers = kwargs.pop("headers", {})
-
                 if not no_auth and "Authorization" not in headers:
-                    token = admin_token if is_admin else customer_token
-                    headers["Authorization"] = f"Bearer {token}"
+                    headers["Authorization"] = f"Bearer {customer_token}"
                 kwargs["headers"] = headers
                 return client_request(path, *args, **kwargs)
 
@@ -90,7 +90,8 @@ def client():
 
         yield test_client
 
-        # Cleanup
-        db.session.rollback()
-        db.session.remove()
+        # Cleanup after tests
+        db.session.execute(text("PRAGMA foreign_keys=OFF;"))  # Disable foreign keys for cleanup
         db.drop_all()
+        db.session.commit()
+        db.session.remove()
