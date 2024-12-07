@@ -95,12 +95,8 @@ class CustomerService:
                 "gender", "marital_status", "wallet_balance", "role"
             ]
 
-            # Construct the query dynamically with only valid fields
-            update_fields = {field: updates.get(field) for field in fields if field in updates}
-            if not update_fields:
-                print(f"DEBUG: No valid fields to update for username {username}.")
-                return False
-
+            # Include all fields in the update dictionary, defaulting to None for missing fields
+            update_fields = {field: updates.get(field, None) for field in fields}
             update_fields["username"] = username
 
             query = text("""
@@ -116,6 +112,7 @@ class CustomerService:
                     role = COALESCE(:role, role)
                 WHERE username = :username
             """)
+
             result = db.session.execute(query, update_fields)
             db.session.commit()
 
@@ -125,7 +122,7 @@ class CustomerService:
             print(f"DEBUG: Error in update_customer: {e}")
             db.session.rollback()
             return False
-    
+
     @staticmethod
     def delete_customer(username):
         """
