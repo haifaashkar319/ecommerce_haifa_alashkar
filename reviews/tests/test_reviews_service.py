@@ -3,6 +3,8 @@ import random
 import string
 from database.db_config import db
 from customers.models import Customer
+from memory_tests import log_memory
+from profile_tests import profile_test
 from utils import create_token
 from inventory.models import Goods
 from reviews.models import Review
@@ -17,7 +19,8 @@ def generate_unique_good_name():
     """Generate a random unique product name."""
     return "testproduct_" + ''.join(random.choices(string.ascii_lowercase + string.digits, k=6))
 
-
+@profile_test
+@log_memory(output_file="reviews_api_memory_usage.log")
 def test_submit_review(client):
     """Test submitting a review."""
     with client.application.app_context():
@@ -70,7 +73,8 @@ def test_submit_review(client):
         assert review["rating"] == 5
         assert review["comment"] == "Excellent product!"
 
-
+@profile_test
+@log_memory(output_file="reviews_api_memory_usage.log")
 def test_update_review(client):
     """Test updating a review."""
     with client.application.app_context():
@@ -120,7 +124,8 @@ def test_update_review(client):
         assert updated_review["rating"] == 4
         assert updated_review["comment"] == "Good product."
 
-
+@profile_test
+@log_memory(output_file="reviews_api_memory_usage.log")
 def test_delete_review(client):
     """Test deleting a review."""
     with client.application.app_context():
@@ -163,7 +168,8 @@ def test_delete_review(client):
         assert response.status_code == 200
         assert response.json["message"] == "Review deleted successfully"
 
-
+@profile_test
+@log_memory(output_file="reviews_api_memory_usage.log")
 def test_get_product_reviews(client):
     """Test retrieving all reviews for a product."""
     with client.application.app_context():
@@ -226,7 +232,8 @@ def test_get_product_reviews(client):
         assert any(r["customer_username"] == username1 for r in reviews)
         assert any(r["customer_username"] == username2 for r in reviews)
 
-
+@profile_test
+@log_memory(output_file="reviews_api_memory_usage.log")
 def test_moderate_review(client):
     """Test moderating a review."""
     with client.application.app_context():
