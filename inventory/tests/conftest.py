@@ -1,30 +1,36 @@
 import os
 import sys
 import pytest
+
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")))
 
-from database.db_config import db  # Import the db object
+from flask import Flask
+from inventory.routes import inventory_bp
+from database.db_config import db
+from inventory.models import Goods
 from customers.models import Customer
 from utils import create_token
+
 
 @pytest.fixture
 def client():
     """
-    Flask test client with a temporary SQLite database for testing the inventory.
+    Flask test client with a temporary SQLite database for testing inventory.
     """
-    from inventory.app import app as inventory_app
+    # Create a new app instance for tests
+    app = Flask(__name__)
+    app.register_blueprint(inventory_bp)
 
-    inventory_app.config.update({
-        'TESTING': True,
-        'SQLALCHEMY_DATABASE_URI': 'sqlite:///:memory:',
-        'SQLALCHEMY_TRACK_MODIFICATIONS': False
-    })
-    app = inventory_app
+    # Initialize the test database
+    from database.db_config import init_db
+    init_db(app, database_uri='sqlite:///:memory:')  # Use in-memory SQLite DB
+
+    app.config['TESTING'] = True
 
     with app.app_context():
         db.create_all()
 
-        # Create an admin user
+        # Seed admin user
         admin_user = Customer(
             full_name="Admin User",
             username="admin",
@@ -33,19 +39,25 @@ def client():
             role="admin"
         )
         db.session.add(admin_user)
+
+      
+        # Seed inventory items
+
         db.session.commit()
 
-        # Generate an admin token
+        # Generate tokens
         admin_token = create_token(admin_user.id)
 
         # Helper function to add the Authorization header
         def add_auth_header(client_request):
             def wrapper(path, *args, **kwargs):
-                # Handle no_auth manually
                 no_auth = kwargs.pop("no_auth", False)
+                is_admin = kwargs.pop("is_admin", False)
                 headers = kwargs.pop("headers", {})
+
                 if not no_auth and "Authorization" not in headers:
-                    headers["Authorization"] = f"Bearer {admin_token}"
+                    token = admin_token 
+                    headers["Authorization"] = f"Bearer {token}"
                 kwargs["headers"] = headers
                 return client_request(path, *args, **kwargs)
 
@@ -60,5 +72,7 @@ def client():
 
         yield test_client
 
+        # Cleanup
+        db.session.rollback()
         db.session.remove()
         db.drop_all()
