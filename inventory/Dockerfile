@@ -1,20 +1,18 @@
-# Base image
+# Use Python base image
 FROM python:3.9-slim
 
-# Set the working directory
+ENV PYTHONPATH=/app
+# Set working directory
 WORKDIR /app
 
-# Copy the shared requirements file from the root
-COPY requirements.txt ./requirements.txt
 
-# Copy the source code for the service
+# Copy application files
 COPY . .
 
-COPY . /app
 # Install dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Expose the service port
+# Expose the application port
 EXPOSE 5002
 
 # Run the application

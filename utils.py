@@ -23,11 +23,11 @@ def decode_token(token):
         # print(f"Raw Token: {token}")
         if token.startswith("Bearer "):
             token = token.split(" ", 1)[1]
-        # print(f"Token after removing Bearer prefix: {token}")
+        print(f"Token after removing Bearer prefix: {token}")
 
         # Decode the token
         payload = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
-        # print(f"Decoded Token Payload: {payload}")
+        print(f"Decoded Token Payload: {payload}")
 
         # Ensure the 'sub' field exists
         user_id = payload.get("sub")
